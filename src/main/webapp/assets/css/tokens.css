@@ -1,0 +1,52 @@
+/* ============================================================
+   tokens.css — NGUỒN CHÂN LÝ DUY NHẤT cho màu/size/spacing/radius.
+   Luật: mọi nơi khác dùng var(--...), CẤM viết mã hex/size cứng.
+   (rules/frontend/02-color-token.md, 03-typography-spacing.md)
+   ============================================================ */
+:root {
+  /* --- Primitive: bảng màu Floria (hoa - hồng/đỏ ấm) --- */
+  --pink-50:#fff1f4; --pink-100:#ffe0e7; --pink-300:#f7a8bb;
+  --pink-500:#e5486e; --pink-600:#d43566; --pink-700:#b81e4f; --pink-900:#7a0f31;
+  --gray-50:#faf7f8; --gray-100:#f1edef; --gray-200:#e5dfe2; --gray-300:#cfc7cb;
+  --gray-500:#8a8085; --gray-700:#4f474b; --gray-900:#262123;
+  --white:#ffffff; --ink:#241d20;
+
+  /* --- Semantic (đổi giao diện chỉ sửa ở đây) --- */
+  --color-primary:#b81e4f;      /* nút/nav/tiêu đề */
+  --color-primary-hover:#7a0f31;
+  --color-accent:#e5486e;       /* link active/badge */
+  --color-bg:#faf7f8;           /* nền trang */
+  --color-surface:#ffffff;      /* thẻ */
+  --color-text:#241d20;
+  --color-text-muted:#8a8085;
+  --color-border:#e5dfe2;
+  --focus-ring:#e5486e;
+
+  /* Trạng thái ngữ nghĩa (cố định) */
+  --success:#16a34a; --warning:#f59e0b; --danger:#dc2626; --info:#2563eb; --neutral:#8a8085;
+  --success-bg:#dcfce7; --warning-bg:#fef3c7; --danger-bg:#fee2e2; --info-bg:#dbeafe; --neutral-bg:#f1edef;
+
+  /* --- Typography (base 16px) --- */
+  --font-sans:"Be Vietnam Pro","Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --text-xs:0.75rem;  --text-sm:0.875rem; --text-base:1rem;
+  --text-xl:1.25rem;  --text-2xl:1.5rem;  --text-3xl:1.875rem; --text-4xl:2.75rem;
+  --fw-normal:400; --fw-medium:500; --fw-semibold:600; --fw-bold:700;
+
+  /* --- Spacing (thang 4px) --- */
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px; --space-8:32px; --space-12:48px;
+
+  /* --- Radius --- */
+  --radius-sm:6px; --radius:10px; --radius-md:14px; --radius-lg:20px; --radius-full:999px;
+
+  /* --- Shadow --- */
+  --shadow-sm:0 1px 2px rgba(122,15,49,.06);
+  --shadow:0 2px 10px rgba(122,15,49,.08);
+  --shadow-lg:0 8px 30px rgba(122,15,49,.12);
+
+  /* Map sang Bootstrap để component Bootstrap tự theo brand */
+  --bs-primary:var(--color-primary);
+  --bs-body-color:var(--color-text);
+  --bs-body-bg:var(--color-bg);
+  --bs-border-color:var(--color-border);
+  --bs-border-radius:var(--radius);
+}
