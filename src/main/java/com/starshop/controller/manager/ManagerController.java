@@ -1,24 +1,32 @@
 package com.starshop.controller.manager;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.starshop.controller.admin.AdminWeb;
+import com.starshop.service.admin.DashboardService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * ================= STUB cho TV3 (Manager - D6) =================
- * /manager/** = ADMIN|MANAGER. Manager thao tác trên shop được phân công (store_managers).
+ * Khu Manager (/manager/** = ADMIN|MANAGER): quản lý các shop được phân công trong store_managers.
+ * Dashboard dùng chung view admin/dashboard; DashboardService tự giới hạn phạm vi theo AdminScope.
+ * Các trang shop / sản phẩm / chiết khấu dùng chung controller trong controller/admin (map cả /manager/**).
+ * @owner: TV3 | @leaf: F6.x (phạm vi shop được giao) | @status: DONE
  */
 @Controller
 @RequestMapping("/manager")
+@RequiredArgsConstructor
 public class ManagerController {
 
-    // @owner: TV3 | @leaf: F6.x (phạm vi 1 shop) | @status: TODO
+    private final DashboardService dashboardService;
+    private final ObjectMapper objectMapper;
+
     @GetMapping({"", "/", "/dashboard"})
-    public String dashboard(Model model) {
-        model.addAttribute("owner", "TV3");
-        model.addAttribute("area", "Manager / Quản lý cửa hàng được phân công (D6)");
-        model.addAttribute("todo", "Như Admin nhưng giới hạn ở shop trong store_managers");
-        return "common/stub";
+    public String dashboard(@RequestParam(defaultValue = "30") int days, Model model) {
+        AdminWeb.dashboardModel(dashboardService.build(days), objectMapper, model);
+        return "admin/dashboard";
     }
 }
