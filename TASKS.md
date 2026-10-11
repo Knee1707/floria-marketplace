@@ -17,9 +17,9 @@ Trạng thái: ⬜ Todo · 🟨 Doing · 🟦 Review · ✅ Done. Leader cập n
 ## TV2 — Bán & Giao vận  (chỉ sửa file @owner:TV2)
 | Leaf | Mô tả | Stub sẵn | TT |
 |---|---|---|---|
-| F4.1–F4.7 | Vendor: shop, SP, đơn, KM, ví, doanh thu | `controller/vendor/VendorController` | ⬜ |
-| F5.1–F5.3 | Shipper: đơn phân công, cập nhật, thống kê | `controller/shipper/ShipperController` | ⬜ |
-| F7.1–F7.3 | WebSocket + Cloudinary | `WebSocketConfig`, `CloudinaryConfig` | ⬜ |
+| F4.1–F4.7 | Vendor: shop, SP, đơn, KM, ví, doanh thu | `controller/vendor/*`, `service/vendor/*`, `views/vendor/*`, `V4__seed_vendor.sql` | ✅ |
+| F5.1–F5.3 | Shipper: đơn phân công, cập nhật, thống kê | `controller/shipper/ShipperController`, `service/shipper/ShipperServiceImpl`, `views/shipper/*` | ✅ |
+| F7.1–F7.3 | WebSocket + Cloudinary | `NotificationServiceImpl`, `CloudinaryServiceImpl`, `ChatController` | ✅ |
 
 ## TV3 — Quản trị & Giao diện  (chỉ sửa file @owner:TV3)
 | Leaf | Mô tả | Stub sẵn | TT |
