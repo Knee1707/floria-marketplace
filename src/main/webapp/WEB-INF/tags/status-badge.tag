@@ -16,6 +16,13 @@
   <c:when test="${value=='ACTIVE'}"><c:set var="cls" value="success"/><c:set var="lbl" value="Đang bán"/></c:when>
   <c:when test="${value=='HIDDEN'}"><c:set var="cls" value="neutral"/><c:set var="lbl" value="Ẩn"/></c:when>
   <c:when test="${value=='BANNED'}"><c:set var="cls" value="danger"/><c:set var="lbl" value="Bị cấm"/></c:when>
+  <%-- Trạng thái quản trị (TV3): shop duyệt/chờ, tài khoản, bật/tắt --%>
+  <c:when test="${value=='APPROVED'}"><c:set var="cls" value="success"/><c:set var="lbl" value="Đã duyệt"/></c:when>
+  <c:when test="${value=='PENDING'}"><c:set var="cls" value="warning"/><c:set var="lbl" value="Chờ duyệt / bị cấm"/></c:when>
+  <c:when test="${value=='ENABLED'}"><c:set var="cls" value="success"/><c:set var="lbl" value="Hoạt động"/></c:when>
+  <c:when test="${value=='DISABLED'}"><c:set var="cls" value="neutral"/><c:set var="lbl" value="Đã tắt"/></c:when>
+  <c:when test="${value=='LOCKED'}"><c:set var="cls" value="danger"/><c:set var="lbl" value="Bị khoá"/></c:when>
+  <c:when test="${value=='UNVERIFIED'}"><c:set var="cls" value="warning"/><c:set var="lbl" value="Chưa kích hoạt"/></c:when>
   <c:otherwise><c:set var="cls" value="neutral"/><c:set var="lbl" value="${value}"/></c:otherwise>
 </c:choose>
 <span class="ss-badge ${cls}">${lbl}</span>

@@ -24,8 +24,8 @@ Trạng thái: ⬜ Todo · 🟨 Doing · 🟦 Review · ✅ Done. Leader cập n
 ## TV3 — Quản trị & Giao diện  (chỉ sửa file @owner:TV3)
 | Leaf | Mô tả | Stub sẵn | TT |
 |---|---|---|---|
-| F6.1–F6.10 | Admin/Manager: user, danh mục, commission, vận chuyển, thống kê | `controller/admin`, `controller/manager` | ⬜ |
-| F8.1–F8.3 | Template Bootstrap, layout, responsive | `decorators/default.jsp` | 🟨 |
+| F6.1–F6.10 | Admin/Manager: user, danh mục, thuộc tính SP, duyệt shop/SP, commission, KM hệ thống, vận chuyển, dashboard | `controller/admin`, `controller/manager`, `service/admin`, `views/admin`, `V5__seed_admin.sql` | 🟦 |
+| F8.1–F8.3 | Template Bootstrap, layout, responsive | `decorators/default.jsp`, shell Admin `tags/admin-shell.tag` | 🟨 |
 
 ## Quy ước Git
 - Nhánh: `feature/{tv}-{leaf}` → PR vào `develop` → Leader review → merge.
