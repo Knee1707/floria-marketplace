@@ -32,9 +32,12 @@
       <sec:authorize access="hasAnyRole('ADMIN','MANAGER')"><a href="${ctx}/admin">Quản trị</a></sec:authorize>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <sec:authorize access="isAuthenticated()">
+      <%-- Mục của người MUA (giỏ, đơn) chỉ hiện cho USER/VENDOR; shipper/admin/manager không thấy giao diện mua --%>
+      <sec:authorize access="hasAnyRole('USER','VENDOR')">
         <a href="${ctx}/cart" title="Giỏ hàng"><t:icon name="cart" size="22" label="Giỏ hàng"/></a>
         <a href="${ctx}/account/orders" title="Đơn của tôi"><t:icon name="package" size="22" label="Đơn của tôi"/></a>
+      </sec:authorize>
+      <sec:authorize access="isAuthenticated()">
         <span class="d-none d-sm-inline" style="opacity:.9"><sec:authentication property="name"/></span>
         <form method="post" action="${ctx}/auth/logout" class="d-inline m-0">
           <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>

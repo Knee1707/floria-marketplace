@@ -23,6 +23,7 @@ public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final com.starshop.security.RoleBasedSuccessHandler roleBasedSuccessHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -60,7 +61,7 @@ public class SecurityConfig {
                 .loginPage("/auth/login")
                 .loginProcessingUrl("/auth/do-login")
                 .usernameParameter("email")
-                .defaultSuccessUrl("/", true)
+                .successHandler(roleBasedSuccessHandler)   // mỗi role về khu chức năng riêng
                 .failureUrl("/auth/login?error")
                 .permitAll()
             )
