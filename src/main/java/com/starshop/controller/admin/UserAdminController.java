@@ -49,4 +49,23 @@ public class UserAdminController {
         AdminWeb.ok(ra, "Đã đổi vai trò thành " + role.name());
         return "redirect:/admin/users";
     }
+
+    // F6.1 (thêm): Admin tạo tài khoản mới (vd người bán / shipper)
+    @PostMapping("/create")
+    public String create(@RequestParam String fullName, @RequestParam String email,
+                         @RequestParam(required = false) String phone,
+                         @RequestParam String password, @RequestParam Role role,
+                         RedirectAttributes ra) {
+        userAdminService.createUser(fullName, email, phone, password, role);
+        AdminWeb.ok(ra, "Đã thêm người dùng " + email);
+        return "redirect:/admin/users";
+    }
+
+    // F6.1 (xóa): Admin xoá tài khoản
+    @PostMapping("/{id}/delete")
+    public String delete(@PathVariable Long id, RedirectAttributes ra) {
+        userAdminService.deleteUser(id);
+        AdminWeb.ok(ra, "Đã xoá người dùng");
+        return "redirect:/admin/users";
+    }
 }

@@ -32,6 +32,7 @@ public class SiteMeshConfig {
     static class StarShopSiteMeshFilter extends ConfigurableSiteMeshFilter {
         @Override
         protected void applyCustomConfiguration(SiteMeshFilterBuilder builder) {
+            builder.setDecoratorPrefix("");
             builder
                 // Layout mặc định cho toàn site
                 .addDecoratorPath("/*", "/WEB-INF/views/decorators/default.jsp")

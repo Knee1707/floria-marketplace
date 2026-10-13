@@ -8,6 +8,13 @@
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <t:page-header title="Đơn của tôi"/>
 
+<c:if test="${not empty toast}">
+  <div class="ss-toast success" role="status"><t:icon name="check" size="18"/> <span><c:out value="${toast}"/></span></div>
+</c:if>
+<c:if test="${not empty toastError}">
+  <div class="ss-toast danger" role="alert"><t:icon name="x" size="18"/> <span><c:out value="${toastError}"/></span></div>
+</c:if>
+
 <div class="d-flex gap-2 flex-wrap mb-3">
   <a class="btn btn-sm ${empty status?'btn-brand':'btn-outline-secondary'}" href="${ctx}/account/orders">Tất cả</a>
   <c:forEach var="s" items="${statuses}">
@@ -22,11 +29,20 @@
   </c:when>
   <c:otherwise>
     <table class="ss-table">
-      <thead><tr><th>Mã đơn</th><th>Cửa hàng</th><th>Trạng thái</th><th class="num">Tổng</th></tr></thead>
+      <thead><tr><th>Mã đơn</th><th>Cửa hàng</th><th>Trạng thái</th><th class="num">Tổng</th><th></th></tr></thead>
       <tbody>
         <c:forEach var="o" items="${orders.content}">
           <tr><td>${o.code}</td><td>${o.store.name}</td><td><t:status-badge value="${o.status}"/></td>
-            <td class="num"><fmt:formatNumber value="${o.total}" type="number"/> đ</td></tr>
+            <td class="num"><fmt:formatNumber value="${o.total}" type="number"/> đ</td>
+            <td>
+              <c:if test="${o.status == 'NEW'}">
+                <form method="post" action="${ctx}/account/orders/${o.id}/cancel" class="m-0"
+                      onsubmit="return confirm('Huỷ đơn ${o.code}?');">
+                  <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+                  <button type="submit" class="btn btn-sm btn-outline-secondary">Huỷ đơn</button>
+                </form>
+              </c:if>
+            </td></tr>
         </c:forEach>
       </tbody>
     </table>

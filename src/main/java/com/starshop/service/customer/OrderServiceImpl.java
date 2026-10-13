@@ -1,10 +1,12 @@
 package com.starshop.service.customer;
 
 import com.starshop.domain.*;
+import com.starshop.domain.enums.CommonEnums.NotificationType;
 import com.starshop.domain.enums.OrderStatus;
 import com.starshop.domain.enums.PaymentMethod;
 import com.starshop.repository.*;
 import com.starshop.security.CurrentUser;
+import com.starshop.service.common.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,6 +29,8 @@ public class OrderServiceImpl implements OrderService {
     private final CartItemRepository cartItemRepository;
     private final VoucherService voucherService;
     private final UserAddressRepository addressRepository;
+    private final ProductRepository productRepository;
+    private final NotificationService notificationService;
     private final CurrentUser currentUser;
 
     @Override
@@ -74,6 +78,12 @@ public class OrderServiceImpl implements OrderService {
                     .build();
 
             for (CartItem ci : items) {
+                Product p = ci.getProduct();
+                int stock = p.getStock() == null ? 0 : p.getStock();
+                if (stock < ci.getQuantity())
+                    throw new IllegalStateException("Sản phẩm \"" + p.getName() + "\" chỉ còn " + stock + " trong kho");
+                p.setStock(stock - ci.getQuantity());
+                productRepository.save(p);
                 order.getItems().add(OrderItem.builder()
                         .order(order).product(ci.getProduct())
                         .quantity(ci.getQuantity()).unitPrice(ci.getProduct().getPrice()).build());
@@ -110,6 +120,26 @@ public class OrderServiceImpl implements OrderService {
                     .filter(o -> o.getBuyer().getId().equals(uid))
                     .ifPresent(o -> { o.setPaid(true); orderRepository.save(o); });
         }
+    }
+
+    @Override
+    @Transactional
+    public void cancelMyOrder(Long orderId) {
+        Order o = getMyOrder(orderId);
+        if (o.getStatus() != OrderStatus.NEW)
+            throw new IllegalStateException("Chỉ huỷ được đơn ở trạng thái Đơn mới");
+        o.setStatus(OrderStatus.CANCELLED);
+        for (OrderItem item : o.getItems()) {
+            Product p = item.getProduct();
+            if (p != null) {
+                p.setStock((p.getStock() == null ? 0 : p.getStock()) + item.getQuantity());
+                productRepository.save(p);
+            }
+        }
+        orderRepository.save(o);
+        if (o.getStore() != null && o.getStore().getOwner() != null)
+            notificationService.notify(o.getStore().getOwner().getId(), NotificationType.ORDER_STATUS,
+                    "Khách đã huỷ đơn hàng #" + o.getCode());
     }
 
     private String resolveAddress(Long addressId) {

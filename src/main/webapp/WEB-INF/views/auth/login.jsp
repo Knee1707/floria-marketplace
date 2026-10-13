@@ -10,7 +10,7 @@
     <c:if test="${param.activated != null}"><div class="alert alert-success">Kích hoạt thành công, mời đăng nhập.</div></c:if>
     <c:if test="${param.logout != null}"><div class="alert alert-info">Đã đăng xuất.</div></c:if>
     <c:if test="${param.reset != null}"><div class="alert alert-success">Đổi mật khẩu thành công, mời đăng nhập.</div></c:if>
-    <form method="post" action="${pageContext.request.contextPath}/auth/login">
+    <form method="post" action="${pageContext.request.contextPath}/auth/do-login">
         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
         <div class="mb-3"><label class="form-label">Email</label>
             <input class="form-control" type="email" name="email" required></div>

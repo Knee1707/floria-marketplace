@@ -24,6 +24,10 @@
       <span>Kênh Giao Vận (Shipper)</span>
     </div>
     <div class="shipper-tabs">
+      <a class="btn btn-sm ${active=='available'?'btn-brand':'btn-outline-secondary'} d-inline-flex align-items-center gap-1"
+         href="${ctx}/shipper/available">
+        <t:icon name="truck" size="16"/> Đơn chờ nhận
+      </a>
       <a class="btn btn-sm ${active=='orders'?'btn-brand':'btn-outline-secondary'} d-inline-flex align-items-center gap-1"
          href="${ctx}/shipper/orders">
         <t:icon name="package" size="16"/> Đơn phân công

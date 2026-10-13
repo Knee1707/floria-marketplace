@@ -54,6 +54,25 @@ public class ShipperController {
         return "shipper/assigned-orders";
     }
 
+    // Shipper tự nhận đơn: danh sách đơn chờ nhận
+    @GetMapping("/available")
+    public String available(Model model) {
+        model.addAttribute("orders", shipperService.availableOrders());
+        return "shipper/available-orders";
+    }
+
+    @PostMapping("/orders/{id}/claim")
+    public String claim(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            shipperService.claimOrder(id);
+            ra.addFlashAttribute("toast", "Đã nhận đơn. Bấm \"Bắt đầu giao hàng\" khi đã lấy hàng.");
+            return "redirect:/shipper/orders";
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("toastError", ex.getMessage());
+            return "redirect:/shipper/available";
+        }
+    }
+
     // @owner: TV2 | @leaf: F5.2 Cập nhật trạng thái giao | @status: DONE
     @PostMapping("/assignments/{id}/status")
     public String updateStatus(@PathVariable Long id,

@@ -18,6 +18,9 @@ public interface OrderService {
 
     Order getMyOrder(Long orderId);
 
+    /** Huỷ đơn của tôi (chỉ khi NEW), hoàn lại tồn kho. */
+    void cancelMyOrder(Long orderId);
+
     /** Đánh dấu đã thanh toán (sau khi VNPAY trả về hợp lệ). Kiểm quyền sở hữu. */
     void markPaid(List<Long> orderIds);
 }

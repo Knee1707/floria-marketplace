@@ -120,6 +120,23 @@ public interface VendorShipperQueryRepository extends Repository<Store, Long> {
            """)
     Optional<DeliveryAssignment> findAssignmentWithDetails(@Param("id") Long id, @Param("shipperId") Long shipperId);
 
+    // ---------- Shipper tự nhận đơn ----------
+    @Query("""
+           select distinct o from Order o
+           join fetch o.buyer
+           join fetch o.store
+           left join fetch o.items i
+           left join fetch i.product
+           where o.status = com.starshop.domain.enums.OrderStatus.CONFIRMED and o.shipper is null
+           order by o.createdAt asc, o.id asc
+           """)
+    List<Order> findClaimableOrders();
+
+    /** Khoá hàng đơn để 2 shipper không nhận trùng 1 đơn. */
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("select o from Order o where o.id = :id")
+    Optional<Order> lockOrderById(@Param("id") Long id);
+
     @Query("select a from DeliveryAssignment a join fetch a.order join fetch a.shipper where a.order.id = :orderId order by a.id desc")
     List<DeliveryAssignment> findAssignmentsByOrderId(@Param("orderId") Long orderId);
 

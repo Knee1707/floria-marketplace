@@ -5,6 +5,7 @@ import com.starshop.security.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -40,6 +41,7 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
+                .dispatcherTypeMatchers(jakarta.servlet.DispatcherType.FORWARD, jakarta.servlet.DispatcherType.ERROR).permitAll()
                 // Tài nguyên tĩnh + trang khách (Guest)
                 .requestMatchers("/", "/home", "/products/**", "/stores/**",
                                  "/auth/**", "/webjars/**", "/assets/**", "/css/**", "/js/**", "/error").permitAll()
@@ -56,7 +58,7 @@ public class SecurityConfig {
             )
             .formLogin(form -> form
                 .loginPage("/auth/login")
-                .loginProcessingUrl("/auth/login")
+                .loginProcessingUrl("/auth/do-login")
                 .usernameParameter("email")
                 .defaultSuccessUrl("/", true)
                 .failureUrl("/auth/login?error")

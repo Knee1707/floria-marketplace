@@ -8,7 +8,29 @@
 <body>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <t:admin-shell active="users">
-  <t:page-header title="Người dùng" subtitle="Tìm kiếm, khoá / mở khoá, phân vai trò"/>
+  <t:page-header title="Người dùng" subtitle="Tìm kiếm, thêm / xoá, khoá / mở khoá, phân vai trò"/>
+
+  <%-- F6.1 (thêm): Admin tạo tài khoản mới, vd người bán (VENDOR) hoặc shipper (SHIPPER) --%>
+  <details class="ss-card" style="margin-bottom:var(--space-4)">
+    <summary style="cursor:pointer;font-weight:var(--fw-semibold)"><t:icon name="add" size="18"/> Thêm người dùng mới</summary>
+    <form method="post" action="${ctx}/admin/users/create" class="row g-2" style="margin-top:var(--space-3)">
+      <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+      <div class="col-md-4"><label class="form-label" for="c_name">Họ tên</label>
+        <input class="form-control" id="c_name" name="fullName" required></div>
+      <div class="col-md-4"><label class="form-label" for="c_email">Email</label>
+        <input class="form-control" id="c_email" name="email" type="email" required></div>
+      <div class="col-md-4"><label class="form-label" for="c_phone">Số điện thoại</label>
+        <input class="form-control" id="c_phone" name="phone"></div>
+      <div class="col-md-4"><label class="form-label" for="c_pass">Mật khẩu</label>
+        <input class="form-control" id="c_pass" name="password" type="password" required minlength="6"></div>
+      <div class="col-md-4"><label class="form-label" for="c_role">Vai trò</label>
+        <select class="form-select" id="c_role" name="role">
+          <c:forEach var="r" items="${roles}"><option value="${r}" ${r=='VENDOR'?'selected':''}>${r}</option></c:forEach>
+        </select></div>
+      <div class="col-md-4 d-flex align-items-end">
+        <button class="btn btn-brand btn-min w-100" type="submit"><t:icon name="add" size="18"/> Tạo tài khoản</button></div>
+    </form>
+  </details>
 
   <form class="ss-toolbar" method="get" action="${ctx}/admin/users" role="search">
     <label class="visually-hidden" for="kw">Từ khoá</label>
@@ -67,6 +89,11 @@
                       <button class="btn btn-sm btn-outline-danger" type="submit"><t:icon name="lock" size="16"/> Khoá</button>
                     </c:otherwise>
                   </c:choose>
+                </form>
+                <form method="post" action="${ctx}/admin/users/${u.id}/delete" class="d-inline"
+                      data-confirm="Xoá vĩnh viễn tài khoản ${fn:escapeXml(uName)}? (Chỉ xoá được khi không còn cửa hàng/đơn liên quan)">
+                  <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+                  <button class="btn btn-sm btn-outline-danger" type="submit"><t:icon name="delete" size="16"/> Xoá</button>
                 </form>
               </td>
             </tr>

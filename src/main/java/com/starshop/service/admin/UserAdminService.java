@@ -14,4 +14,10 @@ public interface UserAdminService {
     void setLocked(Long userId, boolean locked);
     void changeRole(Long userId, Role role);
     void setStoreApproved(Long storeId, boolean approved);
+
+    /** F6.1 (thêm): Admin tạo tài khoản mới (vd người bán / shipper), kích hoạt sẵn. */
+    void createUser(String fullName, String email, String phone, String rawPassword, Role role);
+
+    /** F6.1 (xóa): Admin xoá tài khoản. Chặn nếu còn dữ liệu liên quan (cửa hàng/đơn...). */
+    void deleteUser(Long userId);
 }

@@ -12,6 +12,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /** Tài khoản: hồ sơ, địa chỉ, lịch sử đơn (F3.12–F3.14). @owner: L. */
 @Controller
@@ -38,6 +39,17 @@ public class AccountController {
         model.addAttribute("status", status);
         model.addAttribute("statuses", OrderStatus.values());
         return "customer/order-history";
+    }
+
+    @PostMapping("/orders/{id}/cancel")
+    public String cancelOrder(@PathVariable Long id, RedirectAttributes ra) {
+        try {
+            orderService.cancelMyOrder(id);
+            ra.addFlashAttribute("toast", "Đã huỷ đơn hàng.");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("toastError", ex.getMessage());
+        }
+        return "redirect:/account/orders";
     }
 
     @GetMapping("/viewed")

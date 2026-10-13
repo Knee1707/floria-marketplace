@@ -2,6 +2,7 @@ package com.starshop.service.shipper;
 
 import com.starshop.domain.DeliveryAssignment;
 import com.starshop.domain.Order;
+import com.starshop.domain.User;
 import com.starshop.domain.OrderItem;
 import com.starshop.domain.Product;
 import com.starshop.domain.Transaction;
@@ -13,6 +14,7 @@ import com.starshop.repository.DeliveryAssignmentRepository;
 import com.starshop.repository.OrderRepository;
 import com.starshop.repository.ProductRepository;
 import com.starshop.repository.TransactionRepository;
+import com.starshop.repository.UserRepository;
 import com.starshop.repository.VendorShipperQueryRepository;
 import com.starshop.security.CurrentUser;
 import com.starshop.service.common.NotificationService;
@@ -42,6 +44,7 @@ public class ShipperServiceImpl implements ShipperService {
     private final ProductRepository productRepository;
     private final TransactionRepository transactionRepository;
     private final VendorShipperQueryRepository queryRepository;
+    private final UserRepository userRepository;
     private final CurrentUser currentUser;
     private final NotificationService notificationService;
 
@@ -138,6 +141,40 @@ public class ShipperServiceImpl implements ShipperService {
                         "Đơn hàng #" + order.getCode() + " giao không thành công (chuyển sang Trả/hoàn)."
                 );
             }
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Order> availableOrders() {
+        return queryRepository.findClaimableOrders();
+    }
+
+    @Override
+    @Transactional
+    public void claimOrder(Long orderId) {
+        if (orderId == null) throw new IllegalArgumentException("Thiếu mã đơn");
+        Order order = queryRepository.lockOrderById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng"));
+        if (order.getStatus() != OrderStatus.CONFIRMED || order.getShipper() != null) {
+            throw new IllegalStateException("Đơn này không còn khả dụng (đã có người nhận hoặc đổi trạng thái)");
+        }
+        User shipper = userRepository.findById(currentUser.id())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản shipper"));
+
+        order.setShipper(shipper);
+        order.setStatus(OrderStatus.PICKED_UP);
+        orderRepository.save(order);
+
+        assignmentRepository.save(DeliveryAssignment.builder()
+                .order(order).shipper(shipper)
+                .status(DeliveryStatus.ASSIGNED).assignedAt(Instant.now()).build());
+
+        notificationService.notify(order.getBuyer().getId(), NotificationType.ORDER_STATUS,
+                "Đơn hàng #" + order.getCode() + " đã được shipper " + shipper.getFullName() + " nhận.");
+        if (order.getStore() != null && order.getStore().getOwner() != null) {
+            notificationService.notify(order.getStore().getOwner().getId(), NotificationType.ORDER_STATUS,
+                    "Shipper " + shipper.getFullName() + " đã nhận đơn #" + order.getCode());
         }
     }
 
