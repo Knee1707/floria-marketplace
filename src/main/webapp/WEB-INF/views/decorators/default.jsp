@@ -32,17 +32,35 @@
       <sec:authorize access="hasAnyRole('ADMIN','MANAGER')"><a href="${ctx}/admin">Quản trị</a></sec:authorize>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <%-- Mục của người MUA (giỏ, đơn) chỉ hiện cho USER/VENDOR; shipper/admin/manager không thấy giao diện mua --%>
+      <%-- Giỏ hàng (truy cập nhanh) chỉ cho người MUA --%>
       <sec:authorize access="hasAnyRole('USER','VENDOR')">
         <a href="${ctx}/cart" title="Giỏ hàng"><t:icon name="cart" size="22" label="Giỏ hàng"/></a>
-        <a href="${ctx}/account/orders" title="Đơn của tôi"><t:icon name="package" size="22" label="Đơn của tôi"/></a>
       </sec:authorize>
+      <%-- Menu tài khoản: có Lịch sử mua hàng, Yêu thích, Đã xem, Địa chỉ, Hồ sơ, Đăng xuất --%>
       <sec:authorize access="isAuthenticated()">
-        <span class="d-none d-sm-inline" style="opacity:.9"><sec:authentication property="name"/></span>
-        <form method="post" action="${ctx}/auth/logout" class="d-inline m-0">
-          <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
-          <button class="btn btn-sm btn-light" type="submit">Đăng xuất</button>
-        </form>
+        <div class="dropdown">
+          <button class="btn btn-sm btn-light dropdown-toggle d-flex align-items-center gap-1" type="button"
+                  data-bs-toggle="dropdown" aria-expanded="false">
+            <t:icon name="user" size="18"/> Tài khoản
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <sec:authorize access="hasAnyRole('USER','VENDOR')">
+              <li><a class="dropdown-item" href="${ctx}/account/orders"><t:icon name="package" size="16"/> Lịch sử mua hàng</a></li>
+              <li><a class="dropdown-item" href="${ctx}/cart"><t:icon name="cart" size="16"/> Giỏ hàng</a></li>
+              <li><a class="dropdown-item" href="${ctx}/wishlist"><t:icon name="heart" size="16"/> Sản phẩm yêu thích</a></li>
+              <li><a class="dropdown-item" href="${ctx}/account/viewed"><t:icon name="eye" size="16"/> Sản phẩm đã xem</a></li>
+              <li><a class="dropdown-item" href="${ctx}/account/addresses"><t:icon name="home" size="16"/> Địa chỉ nhận hàng</a></li>
+              <li><a class="dropdown-item" href="${ctx}/account/profile"><t:icon name="user" size="16"/> Hồ sơ của tôi</a></li>
+              <li><hr class="dropdown-divider"></li>
+            </sec:authorize>
+            <li>
+              <form method="post" action="${ctx}/auth/logout" class="m-0">
+                <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+                <button class="dropdown-item" type="submit"><t:icon name="logout" size="16"/> Đăng xuất</button>
+              </form>
+            </li>
+          </ul>
+        </div>
       </sec:authorize>
       <sec:authorize access="isAnonymous()">
         <a class="btn btn-sm btn-light" href="${ctx}/auth/login">Đăng nhập</a>
