@@ -25,6 +25,7 @@ Trạng thái: ⬜ Todo · 🟨 Doing · 🟦 Review · ✅ Done. Leader cập n
 | Leaf | Mô tả | Stub sẵn | TT |
 |---|---|---|---|
 | F6.1–F6.10 | Admin/Manager: user, danh mục, thuộc tính SP, duyệt shop/SP, commission, KM hệ thống, vận chuyển, dashboard | `controller/admin`, `controller/manager`, `service/admin`, `views/admin`, `V5__seed_admin.sql` | 🟦 |
+| F6.x+ | Manager đủ chức năng theo đề (user trong phạm vi, danh mục, KM theo shop, vận chuyển) + Admin phân công Manager ↔ shop + lọc SP theo shop | `controller/admin/*` (map `/manager/**`), `ModerationService`, `AdminScope`, `views/admin/*` | 🟦 |
 | F8.1–F8.3 | Template Bootstrap, layout, responsive | `decorators/default.jsp`, shell Admin `tags/admin-shell.tag` | 🟨 |
 
 ## Quy ước Git
