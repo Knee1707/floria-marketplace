@@ -26,9 +26,12 @@ public class ProductModerationController {
 
     @GetMapping
     public String list(@RequestParam(required = false) String keyword,
+                       @RequestParam(required = false) Long storeId,
                        @RequestParam(defaultValue = "0") int page, Model model) {
         var pageable = PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by("id").descending());
-        model.addAttribute("products", moderationService.products(keyword, pageable));
+        model.addAttribute("products", moderationService.products(keyword, storeId, pageable));
+        model.addAttribute("stores", moderationService.stores()); // lọc "sản phẩm của từng shop"
+        model.addAttribute("storeId", storeId);
         model.addAttribute("keyword", keyword);
         model.addAttribute("keywordParam", AdminWeb.urlParam(keyword));
         return "admin/products";
