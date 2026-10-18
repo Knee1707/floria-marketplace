@@ -10,12 +10,13 @@ KHÁCH/USER  /  ·  /products ·/products/{id}  ·  /categories/{slug}
             /auth/login · /register · /forgot
 VENDOR   /vendor/**    dashboard, sản phẩm, đơn, khuyến mãi, ví/doanh thu
 SHIPPER  /shipper/**   đơn phân công, cập nhật giao, thống kê
-MANAGER  /manager/**   quản trị phạm vi shop được phân công
-         /manager (dashboard) · /manager/stores · /manager/products · /manager/commissions
-ADMIN    /admin/**     user, danh mục, chiết khấu, vận chuyển, thống kê
+MANAGER  /manager/**   quản trị phạm vi shop được phân công (store_managers)
+         /manager (dashboard) · /manager/users · /manager/stores · /manager/products · /manager/categories
+         /manager/commissions · /manager/promotions · /manager/deliveries
+ADMIN    /admin/**     toàn hệ thống + phân công Manager cho shop (trên /admin/stores)
          /admin (dashboard) · /admin/users · /admin/stores · /admin/products · /admin/categories
          /admin/styles · /admin/commissions · /admin/promotions · /admin/deliveries
-         (stores/products/commissions: 1 controller + 1 view phục vụ cả 2 khu, service tự giới hạn phạm vi)
+         (mọi mục trừ styles: 1 controller + 1 view phục vụ cả 2 khu, service tự giới hạn phạm vi qua AdminScope)
 ```
 **Trang mới phải khai báo ở đây trước khi code.**
 

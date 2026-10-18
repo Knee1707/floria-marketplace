@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * F6.7 Nhà vận chuyển (tên + phí ship). Checkout của Leader đọc danh sách này để tính phí.
+ * F6.7 Nhà vận chuyển (tên + phí ship). Admin + Manager (đề: cả 2 role). Checkout của Leader đọc danh sách này để tính phí.
  * @owner: TV3 | @leaf: F6.7 | @status: DONE
  */
 @Service
@@ -32,7 +32,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     @Override
     @Transactional
     public void save(Long id, String name, BigDecimal shippingFee) {
-        adminScope.requireAdmin();
+        adminScope.requireStaff();
         String clean = name == null ? "" : name.trim();
         if (clean.length() < 2 || clean.length() > 120) {
             throw new IllegalArgumentException("Tên nhà vận chuyển phải từ 2 đến 120 ký tự");
@@ -51,7 +51,7 @@ public class DeliveryServiceImpl implements DeliveryService {
     @Override
     @Transactional
     public void delete(Long id) {
-        adminScope.requireAdmin();
+        adminScope.requireStaff();
         if (!deliveryRepository.existsById(id)) {
             throw new IllegalArgumentException("Không tìm thấy nhà vận chuyển #" + id);
         }

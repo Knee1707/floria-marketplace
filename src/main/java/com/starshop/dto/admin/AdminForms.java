@@ -43,7 +43,9 @@ public final class AdminForms {
             @DecimalMax(value = "100", message = "Tỉ lệ tối đa 100%") BigDecimal rate,
             @Size(max = 255, message = "Ghi chú tối đa 255 ký tự") String note) {}
 
+    /** storeId = null → toàn sàn (chỉ Admin); có storeId → voucher của 1 shop (Admin hoặc Manager phụ trách shop). */
     public record VoucherForm(
+            Long storeId,
             @NotBlank(message = "Nhập mã voucher")
             @Pattern(regexp = "^[A-Za-z0-9_-]{3,40}$", message = "Mã 3–40 ký tự: chữ, số, - hoặc _") String code,
             @NotNull(message = "Chọn loại giảm") PromotionType type,
@@ -54,7 +56,9 @@ public final class AdminForms {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {}
 
+    /** storeId = null → toàn sàn (chỉ Admin); có storeId → chương trình của 1 shop. */
     public record PromotionForm(
+            Long storeId,
             @NotNull(message = "Chọn loại khuyến mãi") PromotionType type,
             @NotNull(message = "Nhập giá trị") @DecimalMin(value = "0.01", message = "Giá trị phải > 0") @Digits(integer = 10, fraction = 2, message = "Giá trị quá lớn") BigDecimal value,
             @Min(value = 1, message = "Số lượt phải ≥ 1") Integer quota,

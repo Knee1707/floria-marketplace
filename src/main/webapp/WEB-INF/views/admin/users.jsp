@@ -2,15 +2,19 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%@ taglib prefix="t" tagdir="/WEB-INF/tags" %>
-<%-- F6.1 Quản lý người dùng. @owner: TV3 --%>
+<%-- F6.1 Quản lý người dùng. Admin: toàn hệ thống + tạo/xoá/đổi vai trò · Manager: user thuộc shop được giao, khoá/mở. @owner: TV3 --%>
 <html>
 <head><title>Người dùng - Quản trị Floria</title></head>
 <body>
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
+<c:set var="isAdmin" value="${area != 'manager'}"/>
+<c:set var="listUrl" value="/${area}/users"/>
 <t:admin-shell active="users">
-  <t:page-header title="Người dùng" subtitle="Tìm kiếm, thêm / xoá, khoá / mở khoá, phân vai trò"/>
+  <t:page-header title="Người dùng"
+                 subtitle="${isAdmin ? 'Tìm kiếm, thêm / xoá, khoá / mở khoá, phân vai trò' : 'Chủ shop và khách hàng của các cửa hàng bạn phụ trách'}"/>
 
-  <%-- F6.1 (thêm): Admin tạo tài khoản mới, vd người bán (VENDOR) hoặc shipper (SHIPPER) --%>
+  <c:if test="${isAdmin}">
+  <%-- F6.1 (thêm): Admin tạo tài khoản mới, vd người bán (VENDOR), shipper (SHIPPER) hoặc quản lý (MANAGER) --%>
   <details class="ss-card" style="margin-bottom:var(--space-4)">
     <summary style="cursor:pointer;font-weight:var(--fw-semibold)"><t:icon name="add" size="18"/> Thêm người dùng mới</summary>
     <form method="post" action="${ctx}/admin/users/create" class="row g-2" style="margin-top:var(--space-3)">
@@ -31,18 +35,24 @@
         <button class="btn btn-brand btn-min w-100" type="submit"><t:icon name="add" size="18"/> Tạo tài khoản</button></div>
     </form>
   </details>
+  </c:if>
 
-  <form class="ss-toolbar" method="get" action="${ctx}/admin/users" role="search">
+  <form class="ss-toolbar" method="get" action="${ctx}${listUrl}" role="search">
     <label class="visually-hidden" for="kw">Từ khoá</label>
     <input class="form-control" id="kw" name="keyword" value="${fn:escapeXml(keyword)}" maxlength="100"
            placeholder="Email, họ tên hoặc số điện thoại">
+    <label class="visually-hidden" for="f_role">Vai trò</label>
+    <select class="form-select" id="f_role" name="role" style="width:auto">
+      <option value="">Mọi vai trò</option>
+      <c:forEach var="r" items="${roles}"><option value="${r}" ${r == role ? 'selected' : ''}>${r}</option></c:forEach>
+    </select>
     <button class="btn btn-brand btn-min" type="submit"><t:icon name="search" size="18"/> Tìm</button>
-    <c:if test="${not empty keyword}"><a class="btn btn-outline-secondary btn-min" href="${ctx}/admin/users">Xoá lọc</a></c:if>
+    <c:if test="${not empty keyword or not empty role}"><a class="btn btn-outline-secondary btn-min" href="${ctx}${listUrl}">Xoá lọc</a></c:if>
   </form>
 
   <c:choose>
     <c:when test="${users.totalElements == 0}">
-      <t:empty-state variant="empty" title="Không tìm thấy người dùng phù hợp" actionHref="/admin/users" actionLabel="Xem tất cả"/>
+      <t:empty-state variant="empty" title="Không tìm thấy người dùng phù hợp" actionHref="${listUrl}" actionLabel="Xem tất cả"/>
     </c:when>
     <c:otherwise>
       <div class="muted" style="font-size:var(--text-sm);margin-bottom:var(--space-2)">${users.totalElements} người dùng</div>
@@ -57,17 +67,22 @@
                   <div class="muted" style="font-size:var(--text-xs)"><c:out value="${u.email}"/></div></td>
               <td><c:out value="${u.phone}"/></td>
               <td>
-                <form method="post" action="${ctx}/admin/users/${u.id}/role" class="d-flex gap-1"
-                      data-confirm="Đổi vai trò của ${fn:escapeXml(uName)}?">
-                  <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
-                  <label class="visually-hidden" for="role_${u.id}">Vai trò</label>
-                  <select class="form-select form-select-sm" id="role_${u.id}" name="role" style="width:auto">
-                    <c:forEach var="r" items="${roles}">
-                      <option value="${r}" ${r == u.role ? 'selected' : ''}>${r}</option>
-                    </c:forEach>
-                  </select>
-                  <button class="btn btn-sm btn-outline-secondary" type="submit">Đổi</button>
-                </form>
+                <c:choose>
+                  <c:when test="${isAdmin}">
+                    <form method="post" action="${ctx}/admin/users/${u.id}/role" class="d-flex gap-1"
+                          data-confirm="Đổi vai trò của ${fn:escapeXml(uName)}?">
+                      <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+                      <label class="visually-hidden" for="role_${u.id}">Vai trò</label>
+                      <select class="form-select form-select-sm" id="role_${u.id}" name="role" style="width:auto">
+                        <c:forEach var="r" items="${roles}">
+                          <option value="${r}" ${r == u.role ? 'selected' : ''}>${r}</option>
+                        </c:forEach>
+                      </select>
+                      <button class="btn btn-sm btn-outline-secondary" type="submit">Đổi</button>
+                    </form>
+                  </c:when>
+                  <c:otherwise>${u.role}</c:otherwise>
+                </c:choose>
               </td>
               <td>
                 <c:choose>
@@ -77,7 +92,7 @@
                 </c:choose>
               </td>
               <td class="actions">
-                <form method="post" action="${ctx}/admin/users/${u.id}/lock" class="d-inline"
+                <form method="post" action="${ctx}/${area}/users/${u.id}/lock" class="d-inline"
                       data-confirm="${u.locked ? 'Mở khoá' : 'Khoá'} tài khoản ${fn:escapeXml(uName)}?">
                   <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
                   <input type="hidden" name="locked" value="${not u.locked}"/>
@@ -90,18 +105,20 @@
                     </c:otherwise>
                   </c:choose>
                 </form>
+                <c:if test="${isAdmin}">
                 <form method="post" action="${ctx}/admin/users/${u.id}/delete" class="d-inline"
                       data-confirm="Xoá vĩnh viễn tài khoản ${fn:escapeXml(uName)}? (Chỉ xoá được khi không còn cửa hàng/đơn liên quan)">
                   <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
                   <button class="btn btn-sm btn-outline-danger" type="submit"><t:icon name="delete" size="16"/> Xoá</button>
                 </form>
+                </c:if>
               </td>
             </tr>
           </c:forEach>
           </tbody>
         </table>
       </div>
-      <t:pagination page="${users}" baseUrl="/admin/users?keyword=${keywordParam}&"/>
+      <t:pagination page="${users}" baseUrl="${listUrl}?keyword=${keywordParam}&role=${role}&"/>
     </c:otherwise>
   </c:choose>
 </t:admin-shell>

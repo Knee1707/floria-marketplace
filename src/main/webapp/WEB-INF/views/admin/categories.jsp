@@ -29,9 +29,9 @@
                       <c:out value="${cat.name}"/></td>
                     <td class="muted"><c:out value="${empty cat.parent ? 'Danh mục gốc' : cat.parent.name}"/></td>
                     <td class="actions">
-                      <a class="btn btn-sm btn-outline-secondary" href="${ctx}/admin/categories?editId=${cat.id}" title="Sửa">
+                      <a class="btn btn-sm btn-outline-secondary" href="${ctx}/${area}/categories?editId=${cat.id}" title="Sửa">
                         <t:icon name="edit" size="16" label="Sửa"/></a>
-                      <form method="post" action="${ctx}/admin/categories/${cat.id}/delete" class="d-inline"
+                      <form method="post" action="${ctx}/${area}/categories/${cat.id}/delete" class="d-inline"
                             data-confirm="Xoá danh mục ${fn:escapeXml(cat.name)}?">
                         <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
                         <button class="btn btn-sm btn-outline-danger" type="submit" title="Xoá"><t:icon name="delete" size="16" label="Xoá"/></button>
@@ -49,7 +49,7 @@
 
     <div class="col-lg-5">
       <t:card title="${empty editing ? 'Thêm danh mục' : 'Sửa danh mục'}">
-        <form method="post" action="${ctx}/admin/categories" class="needs-validation">
+        <form method="post" action="${ctx}/${area}/categories" class="needs-validation">
           <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
           <c:if test="${not empty editing}"><input type="hidden" name="id" value="${editing.id}"/></c:if>
           <t:form-field name="name" label="Tên danh mục" required="true" value="${fn:escapeXml(editing.name)}"
@@ -70,7 +70,7 @@
           <div class="d-flex gap-2">
             <button class="btn btn-brand btn-min" type="submit"><t:icon name="${empty editing ? 'add' : 'check'}" size="18"/>
               ${empty editing ? 'Thêm danh mục' : 'Lưu thay đổi'}</button>
-            <c:if test="${not empty editing}"><a class="btn btn-outline-secondary btn-min" href="${ctx}/admin/categories">Huỷ</a></c:if>
+            <c:if test="${not empty editing}"><a class="btn btn-outline-secondary btn-min" href="${ctx}/${area}/categories">Huỷ</a></c:if>
           </div>
         </form>
       </t:card>

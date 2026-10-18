@@ -10,13 +10,20 @@
 <c:set var="ctx" value="${pageContext.request.contextPath}"/>
 <t:admin-shell active="products">
   <t:page-header title="Sản phẩm"
-                 subtitle="${area == 'manager' ? 'Sản phẩm của các cửa hàng bạn phụ trách' : 'Kiểm duyệt sản phẩm toàn sàn'}"/>
+                 subtitle="${area == 'manager' ? 'Sản phẩm của các cửa hàng bạn phụ trách' : 'Kiểm duyệt sản phẩm toàn sàn, lọc theo từng cửa hàng'}"/>
 
   <form class="ss-toolbar" method="get" action="${ctx}/${area}/products" role="search">
     <label class="visually-hidden" for="kw">Tên sản phẩm</label>
     <input class="form-control" id="kw" name="keyword" value="${fn:escapeXml(keyword)}" maxlength="100" placeholder="Tên sản phẩm">
-    <button class="btn btn-brand btn-min" type="submit"><t:icon name="search" size="18"/> Tìm</button>
-    <c:if test="${not empty keyword}"><a class="btn btn-outline-secondary btn-min" href="${ctx}/${area}/products">Xoá lọc</a></c:if>
+    <label class="visually-hidden" for="f_store">Cửa hàng</label>
+    <select class="form-select" id="f_store" name="storeId" style="width:auto">
+      <option value="">Mọi cửa hàng</option>
+      <c:forEach var="s" items="${stores}">
+        <option value="${s.id}" ${s.id == storeId ? 'selected' : ''}><c:out value="${s.name}"/></option>
+      </c:forEach>
+    </select>
+    <button class="btn btn-brand btn-min" type="submit"><t:icon name="filter" size="18"/> Lọc</button>
+    <c:if test="${not empty keyword or not empty storeId}"><a class="btn btn-outline-secondary btn-min" href="${ctx}/${area}/products">Xoá lọc</a></c:if>
   </form>
 
   <c:choose>
@@ -61,7 +68,7 @@
           </tbody>
         </table>
       </div>
-      <t:pagination page="${products}" baseUrl="/${area}/products?keyword=${keywordParam}&"/>
+      <t:pagination page="${products}" baseUrl="/${area}/products?keyword=${keywordParam}&storeId=${storeId}&"/>
     </c:otherwise>
   </c:choose>
 </t:admin-shell>
