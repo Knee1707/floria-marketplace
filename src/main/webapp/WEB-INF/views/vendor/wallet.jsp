@@ -38,7 +38,7 @@
                         hint="Số tiền rút không được vượt quá số dư khả dụng hiện tại."/>
 
           <t:form-field name="note" label="Thông tin tài khoản nhận" required="true"
-                        placeholder="Ví dụ: Vietcombank - 0123456789 - TRAN THI VENDOR"/>
+                        placeholder="Ví dụ: Vietcombank - 0123456789 - NHAT KHOA"/>
 
           <button type="submit" class="btn btn-brand btn-min w-100 d-inline-flex align-items-center justify-content-center gap-2">
             <t:icon name="check" size="18"/> Xác nhận rút tiền

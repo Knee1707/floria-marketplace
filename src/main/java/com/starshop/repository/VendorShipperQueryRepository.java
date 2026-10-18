@@ -6,6 +6,7 @@ import com.starshop.domain.Order;
 import com.starshop.domain.Product;
 import com.starshop.domain.Promotion;
 import com.starshop.domain.Store;
+import com.starshop.domain.StyleValue;
 import com.starshop.domain.Transaction;
 import com.starshop.domain.User;
 import com.starshop.domain.Voucher;
@@ -127,7 +128,8 @@ public interface VendorShipperQueryRepository extends Repository<Store, Long> {
            join fetch o.store
            left join fetch o.items i
            left join fetch i.product
-           where o.status = com.starshop.domain.enums.OrderStatus.CONFIRMED and o.shipper is null
+           where o.status in (com.starshop.domain.enums.OrderStatus.CONFIRMED, com.starshop.domain.enums.OrderStatus.PICKED_UP)
+             and o.shipper is null
            order by o.createdAt asc, o.id asc
            """)
     List<Order> findClaimableOrders();
@@ -157,6 +159,9 @@ public interface VendorShipperQueryRepository extends Repository<Store, Long> {
     @Query("select v from Voucher v left join fetch v.store where v.id = :id")
     Optional<Voucher> findVoucherWithStoreById(@Param("id") Long id);
 
+    @Query("select count(v) > 0 from Voucher v where upper(v.code) = upper(:code)")
+    boolean existsVoucherByCode(@Param("code") String code);
+
     @Query("select pr from Promotion pr join fetch pr.store where pr.store.id = :storeId order by pr.id desc")
     List<Promotion> findPromotionsByStoreId(@Param("storeId") Long storeId);
 
@@ -166,4 +171,20 @@ public interface VendorShipperQueryRepository extends Repository<Store, Long> {
 
     @Query("select c from Commission c left join fetch c.store where c.store.id = :storeId or c.store is null order by c.id desc")
     List<Commission> findApplicableCommissions(@Param("storeId") Long storeId);
+
+    // ---------- F4.3: Thuộc tính sản phẩm (Style / StyleValue) ----------
+    @Query("select sv from StyleValue sv join fetch sv.style order by sv.style.id asc, sv.id asc")
+    List<StyleValue> findAllStyleValuesWithStyle();
+
+    // ---------- Đồng bộ dữ liệu seed (F4.6, F7.1) ----------
+    @Query("select s from Store s order by s.id asc")
+    List<Store> findAllStores();
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("update Notification n set n.content = replace(n.content, 'Đỗ Văn Shipper', 'Phong Khoa') where n.content like '%Đỗ Văn Shipper%'")
+    int syncLegacyNotificationNames();
+
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("update Transaction t set t.note = replace(t.note, 'TRAN THI VENDOR', 'NHAT KHOA') where t.note like '%TRAN THI VENDOR%'")
+    int syncLegacyTransactionNames();
 }

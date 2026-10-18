@@ -5,14 +5,17 @@ import com.starshop.domain.Order;
 import com.starshop.domain.OrderItem;
 import com.starshop.domain.Product;
 import com.starshop.domain.Store;
+import com.starshop.domain.Transaction;
 import com.starshop.domain.User;
 import com.starshop.domain.enums.CommonEnums.DeliveryStatus;
 import com.starshop.domain.enums.CommonEnums.NotificationType;
+import com.starshop.domain.enums.CommonEnums.TransactionType;
 import com.starshop.domain.enums.OrderStatus;
 import com.starshop.domain.enums.Role;
 import com.starshop.repository.DeliveryAssignmentRepository;
 import com.starshop.repository.OrderRepository;
 import com.starshop.repository.ProductRepository;
+import com.starshop.repository.TransactionRepository;
 import com.starshop.repository.UserRepository;
 import com.starshop.repository.VendorShipperQueryRepository;
 import com.starshop.service.common.NotificationService;
@@ -20,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 
@@ -35,6 +39,7 @@ public class VendorOrderServiceImpl implements VendorOrderService {
     private final ProductRepository productRepository;
     private final UserRepository userRepository;
     private final DeliveryAssignmentRepository assignmentRepository;
+    private final TransactionRepository transactionRepository;
     private final VendorShipperQueryRepository queryRepository;
     private final StoreService storeService;
     private final NotificationService notificationService;
@@ -66,10 +71,21 @@ public class VendorOrderServiceImpl implements VendorOrderService {
 
         OrderStatus current = order.getStatus();
         if (current == OrderStatus.CANCELLED || current == OrderStatus.DELIVERED || current == OrderStatus.RETURNED) {
-            throw new IllegalStateException("Đơn hàng đã ở trạng thái kết thúc (" + current + "), không thể đổi trạng thái");
+            throw new IllegalStateException("Đơn hàng đã ở trạng thái kết thúc (" + statusLabel(current) + "), không thể đổi trạng thái");
         }
 
-        // Nếu huỷ đơn thì hoàn lại tồn kho cho các sản phẩm trong đơn
+        // Kiểm tra luồng chuyển trạng thái hợp lệ phía Cửa hàng (NEW -> CONFIRMED/CANCELLED; CONFIRMED -> PICKED_UP/CANCELLED)
+        boolean validTransition = (current == OrderStatus.NEW
+                && (newStatus == OrderStatus.CONFIRMED || newStatus == OrderStatus.CANCELLED))
+                || (current == OrderStatus.CONFIRMED
+                && (newStatus == OrderStatus.PICKED_UP || newStatus == OrderStatus.CANCELLED));
+
+        if (!validTransition) {
+            throw new IllegalStateException("Không thể chuyển trạng thái đơn hàng từ \""
+                    + statusLabel(current) + "\" sang \"" + statusLabel(newStatus) + "\"");
+        }
+
+        // Nếu huỷ đơn thì hoàn lại tồn kho và ghi nhận hoàn tiền (nếu đơn đã thanh toán trước)
         if (newStatus == OrderStatus.CANCELLED) {
             for (OrderItem item : order.getItems()) {
                 Product p = item.getProduct();
@@ -77,6 +93,18 @@ public class VendorOrderServiceImpl implements VendorOrderService {
                     p.setStock(p.getStock() + item.getQuantity());
                     productRepository.save(p);
                 }
+            }
+            if (order.isPaid()) {
+                BigDecimal refundAmount = order.getTotal() != null ? order.getTotal() : BigDecimal.ZERO;
+                Transaction refundTx = Transaction.builder()
+                        .store(myStore)
+                        .order(order)
+                        .type(TransactionType.REFUND)
+                        .amount(refundAmount)
+                        .note("Hoàn tiền do huỷ đơn hàng #" + order.getCode())
+                        .build();
+                transactionRepository.save(refundTx);
+                order.setPaid(false);
             }
         }
 
@@ -105,6 +133,9 @@ public class VendorOrderServiceImpl implements VendorOrderService {
                 || order.getStatus() == OrderStatus.DELIVERED
                 || order.getStatus() == OrderStatus.RETURNED) {
             throw new IllegalStateException("Không thể phân công Shipper cho đơn đã kết thúc");
+        }
+        if (order.getStatus() == OrderStatus.SHIPPING) {
+            throw new IllegalStateException("Đơn hàng đang trên đường giao, không thể phân công lại Shipper");
         }
 
         User shipper = userRepository.findById(shipperId)

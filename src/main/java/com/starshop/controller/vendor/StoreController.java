@@ -3,6 +3,7 @@ package com.starshop.controller.vendor;
 import com.starshop.domain.Store;
 import com.starshop.service.common.CloudinaryService;
 import com.starshop.service.vendor.StoreService;
+import com.starshop.service.vendor.VendorStatsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -22,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class StoreController {
 
     private final StoreService storeService;
+    private final VendorStatsService vendorStatsService;
     private final CloudinaryService cloudinaryService;
 
     // @owner: TV2 | @leaf: F4.1 Đăng ký shop | @status: DONE
@@ -47,6 +49,18 @@ public class StoreController {
             ra.addFlashAttribute("toastError", ex.getMessage());
             return "redirect:/account/register-store";
         }
+    }
+
+    // @owner: TV2 | @leaf: F4.2 Chuyển đổi cửa hàng đang quản lý | @status: DONE
+    @PostMapping("/vendor/store/switch")
+    public String switchStore(@RequestParam Long storeId, RedirectAttributes ra) {
+        try {
+            Store switched = vendorStatsService.switchActiveStore(storeId);
+            ra.addFlashAttribute("toast", "Đã chuyển sang quản lý cửa hàng: " + switched.getName());
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("toastError", ex.getMessage());
+        }
+        return "redirect:/vendor";
     }
 
     // @owner: TV2 | @leaf: F4.2 Cập nhật thông tin/ảnh shop | @status: DONE

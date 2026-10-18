@@ -4,6 +4,7 @@ import com.starshop.domain.Category;
 import com.starshop.domain.Commission;
 import com.starshop.domain.Order;
 import com.starshop.domain.Store;
+import com.starshop.domain.StyleValue;
 import com.starshop.domain.Transaction;
 import com.starshop.domain.User;
 import com.starshop.domain.enums.CommonEnums.TransactionType;
@@ -12,9 +13,15 @@ import com.starshop.domain.enums.Role;
 import com.starshop.repository.CategoryRepository;
 import com.starshop.repository.TransactionRepository;
 import com.starshop.repository.VendorShipperQueryRepository;
+import com.starshop.security.CurrentUser;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -46,6 +53,75 @@ public class VendorStatsServiceImpl implements VendorStatsService {
     private final CategoryRepository categoryRepository;
     private final VendorShipperQueryRepository queryRepository;
     private final StoreService storeService;
+    private final CurrentUser currentUser;
+
+    /**
+     * Đồng bộ dữ liệu seed (tên hiển thị V6 và tỷ lệ chiết khấu theo cửa hàng trong bảng transactions)
+     * mà không cần chỉnh sửa các file migration V1..V6 đã đóng băng checksum.
+     */
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void syncSeedLedgerAndNotifications() {
+        queryRepository.syncLegacyNotificationNames();
+        queryRepository.syncLegacyTransactionNames();
+
+        List<Store> stores = queryRepository.findAllStores();
+        for (Store store : stores) {
+            BigDecimal commRate = resolveCommissionRate(store.getId());
+            String rateLabel = commRate.stripTrailingZeros().toPlainString();
+            List<Order> orders = queryRepository.findOrdersByStoreId(store.getId());
+            List<Transaction> txs = queryRepository.findTransactionsByStoreId(store.getId());
+
+            for (Order order : orders) {
+                if (order.getStatus() != OrderStatus.DELIVERED) {
+                    continue;
+                }
+                BigDecimal expectedComm = order.getTotal()
+                        .multiply(commRate)
+                        .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+                String expectedCommNote = "Chiết khấu sàn (" + rateLabel + "%) đơn #" + order.getCode();
+
+                Transaction saleTx = txs.stream()
+                        .filter(t -> t.getOrder() != null
+                                && t.getOrder().getId().equals(order.getId())
+                                && t.getType() == TransactionType.SALE)
+                        .findFirst()
+                        .orElse(null);
+
+                if (saleTx == null) {
+                    transactionRepository.save(Transaction.builder()
+                            .store(store)
+                            .order(order)
+                            .type(TransactionType.SALE)
+                            .amount(order.getTotal())
+                            .note("Doanh thu đơn hàng #" + order.getCode())
+                            .build());
+                }
+
+                Transaction commTx = txs.stream()
+                        .filter(t -> t.getOrder() != null
+                                && t.getOrder().getId().equals(order.getId())
+                                && t.getType() == TransactionType.COMMISSION)
+                        .findFirst()
+                        .orElse(null);
+
+                if (commTx == null) {
+                    transactionRepository.save(Transaction.builder()
+                            .store(store)
+                            .order(order)
+                            .type(TransactionType.COMMISSION)
+                            .amount(expectedComm)
+                            .note(expectedCommNote)
+                            .build());
+                } else if (commTx.getAmount().compareTo(expectedComm) != 0
+                        || !expectedCommNote.equals(commTx.getNote())) {
+                    commTx.setAmount(expectedComm);
+                    commTx.setNote(expectedCommNote);
+                    transactionRepository.save(commTx);
+                }
+            }
+        }
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -55,8 +131,29 @@ public class VendorStatsServiceImpl implements VendorStatsService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<StyleValue> listStyleValues() {
+        return queryRepository.findAllStyleValuesWithStyle();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<User> listActiveShippers() {
         return queryRepository.findActiveUsersByRole(Role.SHIPPER);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Store switchActiveStore(Long storeId) {
+        if (storeId == null) {
+            throw new IllegalArgumentException("Thiếu mã cửa hàng cần chuyển");
+        }
+        Store store = queryRepository.findStoreByIdAndOwnerId(storeId, currentUser.id())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cửa hàng hoặc bạn không có quyền quản lý cửa hàng này"));
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attrs) {
+            HttpSession session = attrs.getRequest().getSession(true);
+            session.setAttribute(StoreServiceImpl.ACTIVE_STORE_SESSION_KEY, store.getId());
+        }
+        return store;
     }
 
     @Override

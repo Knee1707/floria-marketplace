@@ -51,6 +51,24 @@
         <div class="col-12">
           <t:form-field name="description" label="Mô tả chi tiết sản phẩm" type="textarea" value="${product.description}"
                         placeholder="Mô tả thành phần hoa, ý nghĩa, kích thước và hướng dẫn bảo quản tươi lâu..."/>
+          <c:if test="${not empty styleValues}">
+            <div class="mb-3" style="margin-top:calc(var(--space-2) * -1)">
+              <div class="form-label mb-1" style="font-size:var(--text-xs);color:var(--ink-600)">
+                Thuộc tính kiểu dáng &amp; phân loại (nhấn để chèn nhanh vào mô tả):
+              </div>
+              <div class="d-flex flex-wrap gap-1">
+                <c:forEach var="sv" items="${styleValues}">
+                  <button type="button"
+                          class="btn btn-outline-secondary btn-sm"
+                          style="font-size:var(--text-xs);padding:2px var(--space-2);border-radius:var(--radius-pill)"
+                          data-tag="[${sv.style.name}: ${sv.value}]"
+                          onclick="var ta=document.getElementById('description');if(ta){var t=this.getAttribute('data-tag');if(ta.value.indexOf(t)===-1){ta.value=(ta.value?ta.value+' ':'')+t;}}">
+                    <c:out value="${sv.style.name}"/>: <c:out value="${sv.value}"/>
+                  </button>
+                </c:forEach>
+              </div>
+            </div>
+          </c:if>
         </div>
 
         <div class="col-12">

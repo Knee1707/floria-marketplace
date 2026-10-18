@@ -47,6 +47,9 @@ public class PromotionServiceImpl implements PromotionService {
             throw new IllegalArgumentException("Mã voucher không được để trống");
         }
         String normalizedCode = code.trim().toUpperCase(Locale.ROOT);
+        if (queryRepository.existsVoucherByCode(normalizedCode)) {
+            throw new IllegalArgumentException("Mã giảm giá \"" + normalizedCode + "\" đã tồn tại trên hệ thống");
+        }
         if (type == null) {
             throw new IllegalArgumentException("Loại khuyến mãi không hợp lệ");
         }
@@ -55,6 +58,12 @@ public class PromotionServiceImpl implements PromotionService {
         }
         if (type == PromotionType.PRODUCT_PERCENT && value.compareTo(BigDecimal.valueOf(100)) > 0) {
             throw new IllegalArgumentException("Phần trăm giảm giá sản phẩm không được vượt quá 100%");
+        }
+        if (minOrder != null && minOrder.compareTo(BigDecimal.ZERO) < 0) {
+            throw new IllegalArgumentException("Giá trị đơn tối thiểu không được âm");
+        }
+        if (maxDiscount != null && maxDiscount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Mức giảm tối đa phải lớn hơn 0");
         }
         if (quota != null && quota <= 0) {
             throw new IllegalArgumentException("Giới hạn lượt dùng phải lớn hơn 0");

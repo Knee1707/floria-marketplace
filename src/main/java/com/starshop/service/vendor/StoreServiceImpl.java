@@ -9,12 +9,16 @@ import com.starshop.repository.UserRepository;
 import com.starshop.repository.VendorShipperQueryRepository;
 import com.starshop.security.CurrentUser;
 import com.starshop.service.common.NotificationService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
 
@@ -25,6 +29,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class StoreServiceImpl implements StoreService {
+
+    public static final String ACTIVE_STORE_SESSION_KEY = "ACTIVE_VENDOR_STORE_ID";
 
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
@@ -72,7 +78,24 @@ public class StoreServiceImpl implements StoreService {
     @Transactional(readOnly = true)
     public Store myStore() {
         List<Store> stores = queryRepository.findStoresByOwnerId(currentUser.id());
-        return stores.isEmpty() ? null : stores.get(0);
+        if (stores.isEmpty()) {
+            return null;
+        }
+        Store selected = stores.get(0);
+        if (RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attrs) {
+            HttpServletRequest request = attrs.getRequest();
+            request.setAttribute("myStores", stores);
+            HttpSession session = request.getSession(false);
+            if (session != null && session.getAttribute(ACTIVE_STORE_SESSION_KEY) instanceof Long activeId) {
+                for (Store s : stores) {
+                    if (s.getId().equals(activeId)) {
+                        selected = s;
+                        break;
+                    }
+                }
+            }
+        }
+        return selected;
     }
 
     @Override

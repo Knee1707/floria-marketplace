@@ -1,6 +1,8 @@
 package com.starshop.service.vendor;
 
 import com.starshop.domain.Category;
+import com.starshop.domain.Store;
+import com.starshop.domain.StyleValue;
 import com.starshop.domain.Transaction;
 import com.starshop.domain.User;
 import lombok.Builder;
@@ -30,8 +32,14 @@ public interface VendorStatsService {
     /** Lấy danh sách danh mục hoa cho form sản phẩm (F4.3). */
     List<Category> listCategories();
 
+    /** Lấy danh sách giá trị thuộc tính hoa do Admin cấu hình (F4.3). */
+    List<StyleValue> listStyleValues();
+
     /** Lấy danh sách Shipper đang hoạt động để phân công đơn hàng (F4.4). */
     List<User> listActiveShippers();
+
+    /** Chuyển đổi cửa hàng đang quản lý khi Vendor sở hữu nhiều shop (F4.2). */
+    Store switchActiveStore(Long storeId);
 
     @Getter
     @Builder
