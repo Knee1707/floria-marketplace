@@ -1,26 +1,32 @@
 package com.starshop.service.admin;
 
 import com.starshop.domain.Promotion;
+import com.starshop.domain.Store;
 import com.starshop.domain.Voucher;
 import com.starshop.domain.enums.CommonEnums.PromotionType;
 import com.starshop.dto.admin.AdminForms.PromotionForm;
 import com.starshop.dto.admin.AdminForms.VoucherForm;
+import com.starshop.repository.AdminQueryRepository;
 import com.starshop.repository.PromotionRepository;
+import com.starshop.repository.StoreRepository;
 import com.starshop.repository.VoucherRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Example;
-import org.springframework.data.domain.ExampleMatcher;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-/** @owner: TV3 | @leaf: F6.6 Khuyến mãi hệ thống | @status: DONE */
+/**
+ * F6.6 Khuyến mãi: voucher + chương trình (giảm % sản phẩm / giảm phí vận chuyển).
+ * - store = null : TOÀN SÀN → chỉ Admin tạo / sửa.
+ * - store != null: của 1 shop → Admin (mọi shop) hoặc Manager (shop được phân công).
+ * @owner: TV3 | @leaf: F6.6 | @status: DONE
+ */
 @Service
 @RequiredArgsConstructor
 public class SystemPromotionServiceImpl implements SystemPromotionService {
@@ -29,23 +35,25 @@ public class SystemPromotionServiceImpl implements SystemPromotionService {
 
     private final VoucherRepository voucherRepository;
     private final PromotionRepository promotionRepository;
+    private final StoreRepository storeRepository;
+    private final AdminQueryRepository adminQueryRepository;
     private final AdminScope adminScope;
 
     @Override
     @Transactional(readOnly = true)
     public List<Voucher> vouchers() {
-        return voucherRepository.findByStoreIsNull().stream()
-                .sorted(Comparator.comparing(Voucher::getId).reversed()).toList();
+        AdminScope.StoreScope scope = adminScope.current();
+        if (scope.systemWide()) return adminQueryRepository.findAllVouchersWithStore();
+        if (scope.isEmpty()) return List.of();
+        return adminQueryRepository.findVouchersWithStoreIn(scope.storeIds());
     }
 
     @Override
     @Transactional
     public void createVoucher(VoucherForm f) {
-        adminScope.requireAdmin();
+        Store store = targetStore(f.storeId());
         String code = f.code().trim().toUpperCase(Locale.ROOT);
-        Example<Voucher> sameCode = Example.of(Voucher.builder().code(code).build(),
-                ExampleMatcher.matchingAll().withIgnorePaths("active").withIgnoreCase("code"));
-        if (voucherRepository.exists(sameCode)) {
+        if (adminQueryRepository.existsVoucherCode(code)) {
             throw new IllegalArgumentException("Mã " + code + " đã tồn tại");
         }
         validateValue(f.type(), f.value());
@@ -57,7 +65,7 @@ public class SystemPromotionServiceImpl implements SystemPromotionService {
                 .minOrder(f.minOrder()).maxDiscount(f.maxDiscount())
                 .quota(f.quota()).usedCount(0)
                 .startAt(start).endAt(end)
-                .store(null) // toàn hệ thống
+                .store(store)
                 .active(true)
                 .build());
     }
@@ -65,12 +73,9 @@ public class SystemPromotionServiceImpl implements SystemPromotionService {
     @Override
     @Transactional
     public void setVoucherActive(Long voucherId, boolean active) {
-        adminScope.requireAdmin();
-        Voucher v = voucherRepository.findById(voucherId)
+        Voucher v = adminQueryRepository.findVoucherWithStore(voucherId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy voucher #" + voucherId));
-        if (v.getStore() != null) {
-            throw new IllegalArgumentException("Voucher của cửa hàng do Vendor quản lý");
-        }
+        requireAccess(v.getStore());
         // Không xoá cứng: voucher có thể đã gắn vào đơn (order_vouchers) → chỉ bật/tắt.
         v.setActive(active);
         voucherRepository.save(v);
@@ -79,20 +84,22 @@ public class SystemPromotionServiceImpl implements SystemPromotionService {
     @Override
     @Transactional(readOnly = true)
     public List<Promotion> promotions() {
-        return promotionRepository.findByStoreIsNull().stream()
-                .sorted(Comparator.comparing(Promotion::getId).reversed()).toList();
+        AdminScope.StoreScope scope = adminScope.current();
+        if (scope.systemWide()) return adminQueryRepository.findAllPromotionsWithStore();
+        if (scope.isEmpty()) return List.of();
+        return adminQueryRepository.findPromotionsWithStoreIn(scope.storeIds());
     }
 
     @Override
     @Transactional
     public void createPromotion(PromotionForm f) {
-        adminScope.requireAdmin();
+        Store store = targetStore(f.storeId());
         validateValue(f.type(), f.value());
         Instant start = startOf(f.startDate());
         Instant end = endOf(f.endDate());
         validateRange(start, end);
         promotionRepository.save(Promotion.builder()
-                .store(null).type(f.type()).value(f.value())
+                .store(store).type(f.type()).value(f.value())
                 .quota(f.quota()).startAt(start).endAt(end)
                 .build());
     }
@@ -100,13 +107,28 @@ public class SystemPromotionServiceImpl implements SystemPromotionService {
     @Override
     @Transactional
     public void deletePromotion(Long promotionId) {
-        adminScope.requireAdmin();
-        Promotion p = promotionRepository.findById(promotionId)
+        Promotion p = adminQueryRepository.findPromotionWithStore(promotionId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khuyến mãi #" + promotionId));
-        if (p.getStore() != null) {
-            throw new IllegalArgumentException("Khuyến mãi của cửa hàng do Vendor quản lý");
-        }
+        requireAccess(p.getStore());
         promotionRepository.delete(p);
+    }
+
+    /** Shop đích của khuyến mãi mới: null = toàn sàn (chỉ Admin); ngược lại phải trong phạm vi người gọi. */
+    private Store targetStore(Long storeId) {
+        if (storeId == null) {
+            adminScope.requireAdmin();
+            return null;
+        }
+        adminScope.requireStore(storeId);
+        return storeRepository.findById(storeId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cửa hàng #" + storeId));
+    }
+
+    /** Sửa / xoá khuyến mãi có sẵn: toàn sàn → Admin; của shop → phải trong phạm vi (chống IDOR). */
+    private void requireAccess(Store store) {
+        AdminScope.StoreScope scope = adminScope.current();
+        boolean ok = (store == null) ? scope.systemWide() : scope.canAccess(store.getId());
+        if (!ok) throw new AccessDeniedException("Khuyến mãi này không thuộc phạm vi bạn quản lý");
     }
 
     private static void validateValue(PromotionType type, BigDecimal value) {

@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 /**
  * Khu Manager (/manager/** = ADMIN|MANAGER): quản lý các shop được phân công trong store_managers.
  * Dashboard dùng chung view admin/dashboard; DashboardService tự giới hạn phạm vi theo AdminScope.
- * Các trang shop / sản phẩm / chiết khấu dùng chung controller trong controller/admin (map cả /manager/**).
+ * Các trang user / shop / sản phẩm / danh mục / chiết khấu / khuyến mãi / vận chuyển dùng chung controller
+ * trong controller/admin (map cả /manager/**); service giới hạn phạm vi qua AdminScope.
  * @owner: TV3 | @leaf: F6.x (phạm vi shop được giao) | @status: DONE
  */
 @Controller

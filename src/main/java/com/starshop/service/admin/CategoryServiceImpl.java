@@ -10,7 +10,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * F6.2 CRUD danh mục (phân cấp 2 tầng qua parent_id). Chỉ Admin.
+ * F6.2 CRUD danh mục (phân cấp 2 tầng qua parent_id). Admin + Manager (đề: cả 2 role "quản lý danh mục").
+ * Danh mục dùng chung cả chuỗi; xoá được chặn khi còn danh mục con / sản phẩm đang dùng.
  * @owner: TV3 | @leaf: F6.2 | @status: DONE
  */
 @Service
@@ -31,7 +32,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public void save(Long id, String name, Long parentId, String imageUrl) {
-        adminScope.requireAdmin();
+        adminScope.requireStaff();
         String cleanName = name == null ? "" : name.trim();
         if (cleanName.length() < 2 || cleanName.length() > 120) {
             throw new IllegalArgumentException("Tên danh mục phải từ 2 đến 120 ký tự");
@@ -63,7 +64,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public void delete(Long id) {
-        adminScope.requireAdmin();
+        adminScope.requireStaff();
         if (!categoryRepository.existsById(id)) {
             throw new IllegalArgumentException("Không tìm thấy danh mục #" + id);
         }

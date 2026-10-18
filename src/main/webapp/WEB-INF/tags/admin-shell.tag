@@ -19,20 +19,16 @@
   <nav class="app-sidebar admin-side" aria-label="Menu quản trị">
     <div class="admin-side-title">${isManager ? 'Quản lý cửa hàng' : 'Quản trị hệ thống'}</div>
     <a href="${base}" class="${active=='dashboard'?'active':''}" ${active=='dashboard'?'aria-current="page"':''}><t:icon name="chart" size="18"/> Tổng quan</a>
-    <c:if test="${not isManager}">
-      <a href="${base}/users" class="${active=='users'?'active':''}" ${active=='users'?'aria-current="page"':''}><t:icon name="user" size="18"/> Người dùng</a>
-    </c:if>
+    <a href="${base}/users" class="${active=='users'?'active':''}" ${active=='users'?'aria-current="page"':''}><t:icon name="user" size="18"/> Người dùng</a>
     <a href="${base}/stores" class="${active=='stores'?'active':''}" ${active=='stores'?'aria-current="page"':''}><t:icon name="store" size="18"/> Cửa hàng</a>
     <a href="${base}/products" class="${active=='products'?'active':''}" ${active=='products'?'aria-current="page"':''}><t:icon name="package" size="18"/> Sản phẩm</a>
+    <a href="${base}/categories" class="${active=='categories'?'active':''}" ${active=='categories'?'aria-current="page"':''}><t:icon name="tag" size="18"/> Danh mục</a>
     <c:if test="${not isManager}">
-      <a href="${base}/categories" class="${active=='categories'?'active':''}" ${active=='categories'?'aria-current="page"':''}><t:icon name="tag" size="18"/> Danh mục</a>
       <a href="${base}/styles" class="${active=='styles'?'active':''}" ${active=='styles'?'aria-current="page"':''}><t:icon name="layers" size="18"/> Thuộc tính SP</a>
     </c:if>
     <a href="${base}/commissions" class="${active=='commissions'?'active':''}" ${active=='commissions'?'aria-current="page"':''}><t:icon name="percent" size="18"/> Chiết khấu</a>
-    <c:if test="${not isManager}">
-      <a href="${base}/promotions" class="${active=='promotions'?'active':''}" ${active=='promotions'?'aria-current="page"':''}><t:icon name="ticket" size="18"/> Khuyến mãi</a>
-      <a href="${base}/deliveries" class="${active=='deliveries'?'active':''}" ${active=='deliveries'?'aria-current="page"':''}><t:icon name="truck" size="18"/> Vận chuyển</a>
-    </c:if>
+    <a href="${base}/promotions" class="${active=='promotions'?'active':''}" ${active=='promotions'?'aria-current="page"':''}><t:icon name="ticket" size="18"/> Khuyến mãi</a>
+    <a href="${base}/deliveries" class="${active=='deliveries'?'active':''}" ${active=='deliveries'?'aria-current="page"':''}><t:icon name="truck" size="18"/> Vận chuyển</a>
   </nav>
 
   <section class="admin-content">

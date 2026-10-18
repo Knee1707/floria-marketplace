@@ -53,6 +53,14 @@ public class AdminScope {
         throw new AccessDeniedException("Chỉ Admin/Manager được truy cập khu quản trị");
     }
 
+    /**
+     * Cấu hình DÙNG CHUNG cả chuỗi mà đề cho cả Admin và Manager quản lý (danh mục, nhà vận chuyển):
+     * chỉ cần là Admin hoặc Manager (current() tự chặn role khác).
+     */
+    public void requireStaff() {
+        current();
+    }
+
     /** Chặn thao tác cấu hình toàn hệ thống nếu không phải ADMIN (phòng thủ 2 lớp, ngoài SecurityConfig). */
     public void requireAdmin() {
         if (!current().systemWide()) {
