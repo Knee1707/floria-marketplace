@@ -3,8 +3,11 @@ package com.starshop.repository;
 import com.starshop.domain.Category;
 import com.starshop.domain.Commission;
 import com.starshop.domain.Product;
+import com.starshop.domain.Promotion;
 import com.starshop.domain.Store;
 import com.starshop.domain.User;
+import com.starshop.domain.Voucher;
+import com.starshop.domain.enums.Role;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.Query;
@@ -23,11 +26,39 @@ import java.util.List;
 public interface AdminQueryRepository extends Repository<User, Long> {
 
     // ---------- F6.1 Người dùng ----------
+    /** Admin: toàn hệ thống. roles = danh sách vai trò cần lọc (truyền đủ các role khi không lọc → tránh tham số null). */
     @Query("""
            select u from User u
-           where lower(u.email) like :kw or lower(coalesce(u.fullName, '')) like :kw or coalesce(u.phone, '') like :kw
+           where (lower(u.email) like :kw or lower(coalesce(u.fullName, '')) like :kw or coalesce(u.phone, '') like :kw)
+             and u.role in :roles
            """)
-    Page<User> searchUsers(@Param("kw") String kwPattern, Pageable pageable);
+    Page<User> searchUsers(@Param("kw") String kwPattern, @Param("roles") Collection<Role> roles, Pageable pageable);
+
+    /**
+     * Manager: user "thuộc" các shop được giao = chủ shop + khách đã đặt đơn ở shop đó.
+     * Dùng subquery (không JOIN) để mỗi user chỉ ra 1 dòng, phân trang đúng.
+     */
+    @Query("""
+           select u from User u
+           where (lower(u.email) like :kw or lower(coalesce(u.fullName, '')) like :kw or coalesce(u.phone, '') like :kw)
+             and u.role in :roles
+             and (u.id in (select s.owner.id from Store s where s.id in :storeIds)
+                  or u.id in (select o.buyer.id from Order o where o.store.id in :storeIds))
+           """)
+    Page<User> searchUsersInStores(@Param("kw") String kwPattern, @Param("roles") Collection<Role> roles,
+                                   @Param("storeIds") Collection<Long> storeIds, Pageable pageable);
+
+    /** Chống IDOR cho Manager: user có thuộc các shop được giao không. */
+    @Query("""
+           select count(u) > 0 from User u
+           where u.id = :userId
+             and (u.id in (select s.owner.id from Store s where s.id in :storeIds)
+                  or u.id in (select o.buyer.id from Order o where o.store.id in :storeIds))
+           """)
+    boolean isUserInStores(@Param("userId") Long userId, @Param("storeIds") Collection<Long> storeIds);
+
+    @Query("select u from User u where u.role = :role order by lower(coalesce(u.fullName, u.email)), u.id")
+    List<User> findUsersByRole(@Param("role") Role role);
 
     // ---------- F6.4 Cửa hàng ----------
     @Query("select s from Store s join fetch s.owner order by s.approved asc, s.id asc")
@@ -72,4 +103,26 @@ public interface AdminQueryRepository extends Repository<User, Long> {
 
     @Query("select c from Commission c left join fetch c.store where c.id = :id")
     java.util.Optional<Commission> findCommissionWithStore(@Param("id") Long id);
+
+    // ---------- F6.6 Khuyến mãi (store = null: toàn sàn; store != null: của 1 shop) ----------
+    @Query("select v from Voucher v left join fetch v.store order by v.id desc")
+    List<Voucher> findAllVouchersWithStore();
+
+    @Query("select v from Voucher v join fetch v.store s where s.id in :storeIds order by v.id desc")
+    List<Voucher> findVouchersWithStoreIn(@Param("storeIds") Collection<Long> storeIds);
+
+    @Query("select v from Voucher v left join fetch v.store where v.id = :id")
+    java.util.Optional<Voucher> findVoucherWithStore(@Param("id") Long id);
+
+    @Query("select count(v) > 0 from Voucher v where lower(v.code) = lower(:code)")
+    boolean existsVoucherCode(@Param("code") String code);
+
+    @Query("select p from Promotion p left join fetch p.store order by p.id desc")
+    List<Promotion> findAllPromotionsWithStore();
+
+    @Query("select p from Promotion p join fetch p.store s where s.id in :storeIds order by p.id desc")
+    List<Promotion> findPromotionsWithStoreIn(@Param("storeIds") Collection<Long> storeIds);
+
+    @Query("select p from Promotion p left join fetch p.store where p.id = :id")
+    java.util.Optional<Promotion> findPromotionWithStore(@Param("id") Long id);
 }
