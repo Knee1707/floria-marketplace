@@ -39,6 +39,18 @@
           </span>
         </div>
       </c:if>
+      <c:if test="${not empty myStores and myStores.size() > 1}">
+        <form method="post" action="${ctx}/vendor/store/switch" style="margin-top:var(--space-2);margin-bottom:0">
+          <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+          <select name="storeId" class="form-select form-select-sm" aria-label="Chuyển đổi cửa hàng" onchange="this.form.submit()">
+            <c:forEach var="stItem" items="${myStores}">
+              <option value="${stItem.id}" ${not empty store and store.id == stItem.id ? 'selected' : ''}>
+                ${stItem.name} ${stItem.approved ? '' : '(Chờ duyệt)'}
+              </option>
+            </c:forEach>
+          </select>
+        </form>
+      </c:if>
     </div>
 
     <a href="${ctx}/vendor" class="${active=='dashboard'?'active':''}">

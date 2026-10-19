@@ -55,6 +55,7 @@ public class VendorProductController {
         }
         model.addAttribute("store", store);
         model.addAttribute("categories", vendorStatsService.listCategories());
+        model.addAttribute("styleValues", vendorStatsService.listStyleValues());
         return "vendor/product-form";
     }
 
@@ -69,6 +70,7 @@ public class VendorProductController {
             model.addAttribute("store", store);
             model.addAttribute("product", product);
             model.addAttribute("categories", vendorStatsService.listCategories());
+            model.addAttribute("styleValues", vendorStatsService.listStyleValues());
             return "vendor/product-form";
         } catch (RuntimeException ex) {
             ra.addFlashAttribute("toastError", ex.getMessage());

@@ -1,5 +1,6 @@
 package com.starshop.service.shipper;
 
+import com.starshop.domain.Commission;
 import com.starshop.domain.DeliveryAssignment;
 import com.starshop.domain.Order;
 import com.starshop.domain.User;
@@ -37,6 +38,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ShipperServiceImpl implements ShipperService {
 
+    private static final BigDecimal DEFAULT_COMMISSION_RATE = BigDecimal.valueOf(10); // 10%
     private static final ZoneId VN_ZONE = ZoneId.of("Asia/Ho_Chi_Minh");
 
     private final DeliveryAssignmentRepository assignmentRepository;
@@ -66,8 +68,17 @@ public class ShipperServiceImpl implements ShipperService {
         DeliveryAssignment assignment = queryRepository.findAssignmentWithDetails(assignmentId, shipperId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn phân công hoặc đơn không thuộc về bạn"));
 
-        if (assignment.getStatus() == DeliveryStatus.DELIVERED || assignment.getStatus() == DeliveryStatus.FAILED) {
+        DeliveryStatus current = assignment.getStatus();
+        if (current == DeliveryStatus.DELIVERED || current == DeliveryStatus.FAILED) {
             throw new IllegalStateException("Đơn giao vận đã kết thúc, không thể thay đổi trạng thái");
+        }
+        if (current == DeliveryStatus.ASSIGNED && status != DeliveryStatus.DELIVERING) {
+            throw new IllegalStateException("Đơn chờ nhận giao chỉ có thể chuyển sang trạng thái Đang giao");
+        }
+        if (current == DeliveryStatus.DELIVERING
+                && status != DeliveryStatus.DELIVERED
+                && status != DeliveryStatus.FAILED) {
+            throw new IllegalStateException("Đơn đang giao chỉ có thể chuyển sang Đã giao hoặc Giao thất bại");
         }
 
         Order order = assignment.getOrder();
@@ -101,7 +112,7 @@ public class ShipperServiceImpl implements ShipperService {
             orderRepository.save(order);
             assignmentRepository.save(assignment);
 
-            // Ghi nhận giao dịch SALE & COMMISSION cho cửa hàng
+            // Ghi nhận giao dịch SALE & COMMISSION cho cửa hàng theo đúng mức chiết khấu của shop
             recordSaleTransactions(order);
 
             notificationService.notify(
@@ -156,7 +167,9 @@ public class ShipperServiceImpl implements ShipperService {
         if (orderId == null) throw new IllegalArgumentException("Thiếu mã đơn");
         Order order = queryRepository.lockOrderById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng"));
-        if (order.getStatus() != OrderStatus.CONFIRMED || order.getShipper() != null) {
+        boolean claimableStatus = order.getStatus() == OrderStatus.CONFIRMED
+                || order.getStatus() == OrderStatus.PICKED_UP;
+        if (!claimableStatus || order.getShipper() != null) {
             throw new IllegalStateException("Đơn này không còn khả dụng (đã có người nhận hoặc đổi trạng thái)");
         }
         User shipper = userRepository.findById(currentUser.id())
@@ -203,15 +216,36 @@ public class ShipperServiceImpl implements ShipperService {
                 .build();
         transactionRepository.save(saleTx);
 
-        BigDecimal commAmount = total.multiply(BigDecimal.valueOf(10))
+        Long storeId = order.getStore() != null ? order.getStore().getId() : null;
+        BigDecimal commRate = resolveCommissionRate(storeId);
+        BigDecimal commAmount = total.multiply(commRate)
                 .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        String rateLabel = commRate.stripTrailingZeros().toPlainString();
         Transaction commTx = Transaction.builder()
                 .store(order.getStore())
                 .order(order)
                 .type(TransactionType.COMMISSION)
                 .amount(commAmount)
-                .note("Chiết khấu sàn (10%) cho đơn #" + order.getCode())
+                .note("Chiết khấu sàn (" + rateLabel + "%) cho đơn #" + order.getCode())
                 .build();
         transactionRepository.save(commTx);
+    }
+
+    private BigDecimal resolveCommissionRate(Long storeId) {
+        if (storeId == null) {
+            return DEFAULT_COMMISSION_RATE;
+        }
+        List<Commission> commissions = queryRepository.findApplicableCommissions(storeId);
+        for (Commission c : commissions) {
+            if (c.getStore() != null && c.getStore().getId().equals(storeId)) {
+                return c.getRate();
+            }
+        }
+        for (Commission c : commissions) {
+            if (c.getStore() == null) {
+                return c.getRate();
+            }
+        }
+        return DEFAULT_COMMISSION_RATE;
     }
 }
