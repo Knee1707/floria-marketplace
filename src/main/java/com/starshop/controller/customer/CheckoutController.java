@@ -35,16 +35,23 @@ public class CheckoutController {
     private final CurrentUser currentUser;
 
     @GetMapping
-    public String view(@RequestParam(required = false) String voucher, Model model) {
+    public String view(@RequestParam(required = false) String voucher,
+                       @RequestParam(required = false) List<Long> itemIds, Model model) {
         var cart = cartService.getMyCart();
-        BigDecimal subtotal = cart.getItems().stream()
+        boolean selectAll = (itemIds == null || itemIds.isEmpty());
+        var items = cart.getItems().stream()
+                .filter(i -> selectAll || itemIds.contains(i.getId()))
+                .toList();
+        BigDecimal subtotal = items.stream()
                 .map(i -> i.getProduct().getPrice().multiply(BigDecimal.valueOf(i.getQuantity())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal discount = voucherService.computeDiscount(voucher, subtotal);
         model.addAttribute("cart", cart);
+        model.addAttribute("items", items);
         model.addAttribute("subtotal", subtotal);
         model.addAttribute("discount", discount);
         model.addAttribute("voucher", voucher);
+        model.addAttribute("itemIds", selectAll ? List.of() : itemIds);
         model.addAttribute("addresses", addressRepository.findByUserId(currentUser.id()));
         return "customer/checkout";
     }
@@ -53,8 +60,9 @@ public class CheckoutController {
     public String place(@RequestParam(required = false) Long addressId,
                         @RequestParam(defaultValue = "COD") PaymentMethod method,
                         @RequestParam(required = false) String voucher,
+                        @RequestParam(required = false) List<Long> itemIds,
                         HttpServletRequest request, HttpSession session, Model model) {
-        List<Order> orders = orderService.placeFromCart(addressId, method, voucher);
+        List<Order> orders = orderService.placeFromCart(itemIds, addressId, method, voucher);
 
         if (method == PaymentMethod.VNPAY) {
             session.setAttribute(SESSION_ORDER_IDS, orders.stream().map(Order::getId).toList());

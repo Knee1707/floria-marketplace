@@ -14,11 +14,19 @@
   </c:when>
   <c:otherwise>
     <t:card>
+      <%-- Form thanh toán (GET /checkout) đặt ở cuối; các checkbox dòng gắn vào form này qua thuộc tính form="checkoutForm"
+           nên KHÔNG lồng form trong form (cùng với form Cập nhật/Xoá của mỗi dòng). --%>
       <table class="ss-table">
-        <thead><tr><th>Sản phẩm</th><th>Giá</th><th>Số lượng</th><th class="num">Tạm tính</th><th></th></tr></thead>
+        <thead><tr>
+          <th style="width:40px"><input type="checkbox" id="selAll" class="form-check-input" checked aria-label="Chọn tất cả"></th>
+          <th>Sản phẩm</th><th>Giá</th><th>Số lượng</th><th class="num">Tạm tính</th><th></th>
+        </tr></thead>
         <tbody>
           <c:forEach var="i" items="${cart.items}">
             <tr>
+              <td><input type="checkbox" class="form-check-input co-item" name="itemIds" value="${i.id}"
+                         form="checkoutForm" checked data-amount="${i.product.price * i.quantity}"
+                         aria-label="Chọn ${i.product.name}"></td>
               <td>${i.product.name}<div class="muted" style="font-size:var(--text-xs)">${i.product.store.name}</div></td>
               <td class="num"><fmt:formatNumber value="${i.product.price}" type="number"/> đ</td>
               <td>
@@ -41,11 +49,38 @@
           </c:forEach>
         </tbody>
       </table>
-      <div class="d-flex justify-content-between align-items-center" style="margin-top:var(--space-4)">
-        <div>Tạm tính: <span class="price"><fmt:formatNumber value="${subtotal}" type="number"/> đ</span></div>
-        <a class="btn btn-brand btn-min" href="${ctx}/checkout"><t:icon name="check" size="18"/> Thanh toán</a>
-      </div>
+      <form id="checkoutForm" method="get" action="${ctx}/checkout"
+            class="d-flex justify-content-between align-items-center" style="margin-top:var(--space-4)">
+        <div>Đã chọn: <span class="price" id="selSubtotal"><fmt:formatNumber value="${subtotal}" type="number"/> đ</span></div>
+        <button type="submit" class="btn btn-brand btn-min"><t:icon name="check" size="18"/> Thanh toán</button>
+      </form>
     </t:card>
+
+    <script>
+    (function () {
+      var all = document.getElementById('selAll');
+      var boxes = Array.prototype.slice.call(document.querySelectorAll('.co-item'));
+      var out = document.getElementById('selSubtotal');
+      function recompute() {
+        var sum = boxes.filter(function (b) { return b.checked; })
+                       .reduce(function (s, b) { return s + Number(b.dataset.amount || 0); }, 0);
+        out.textContent = sum.toLocaleString('en-US') + ' đ';
+        all.checked = boxes.length > 0 && boxes.every(function (b) { return b.checked; });
+      }
+      all.addEventListener('change', function () {
+        boxes.forEach(function (b) { b.checked = all.checked; });
+        recompute();
+      });
+      boxes.forEach(function (b) { b.addEventListener('change', recompute); });
+      document.getElementById('checkoutForm').addEventListener('submit', function (e) {
+        if (!boxes.some(function (b) { return b.checked; })) {
+          e.preventDefault();
+          alert('Vui lòng chọn ít nhất một sản phẩm để thanh toán.');
+        }
+      });
+      recompute();
+    })();
+    </script>
   </c:otherwise>
 </c:choose>
 </body>

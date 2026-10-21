@@ -24,4 +24,7 @@ public final class CommonEnums {
 
     /** Loại thông báo realtime. */
     public enum NotificationType { NEW_ORDER, ORDER_STATUS, ASSIGNMENT, CHAT, SYSTEM }
+
+    /** Đối tượng được đánh giá sau khi đơn giao thành công: cửa hàng hoặc shipper. */
+    public enum ReviewTarget { SHOP, SHIPPER }
 }

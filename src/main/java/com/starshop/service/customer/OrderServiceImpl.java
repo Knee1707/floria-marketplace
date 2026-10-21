@@ -35,14 +35,21 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     @Transactional
-    public List<Order> placeFromCart(Long addressId, PaymentMethod method, String voucherCode) {
+    public List<Order> placeFromCart(List<Long> itemIds, Long addressId, PaymentMethod method, String voucherCode) {
         Cart cart = cartService.getMyCart();
         if (cart.getItems().isEmpty()) throw new IllegalStateException("Giỏ hàng trống");
+
+        // Chỉ đặt các dòng được chọn; null/rỗng = toàn bộ giỏ (tương thích lối vào /checkout trực tiếp).
+        boolean selectAll = (itemIds == null || itemIds.isEmpty());
+        List<CartItem> selected = cart.getItems().stream()
+                .filter(i -> selectAll || itemIds.contains(i.getId()))
+                .toList();
+        if (selected.isEmpty()) throw new IllegalStateException("Chưa chọn sản phẩm nào để thanh toán");
 
         String address = resolveAddress(addressId);
 
         // Nhóm item theo shop -> mỗi shop 1 đơn
-        Map<Store, List<CartItem>> byStore = cart.getItems().stream()
+        Map<Store, List<CartItem>> byStore = selected.stream()
                 .collect(Collectors.groupingBy(i -> i.getProduct().getStore()));
 
         List<Order> created = new ArrayList<>();
@@ -91,7 +98,8 @@ public class OrderServiceImpl implements OrderService {
             created.add(orderRepository.save(order));
         }
 
-        cartService.clear();
+        // Chỉ xoá các dòng đã đặt khỏi giỏ (gỡ khỏi collection -> orphanRemoval xoá hẳn).
+        cart.getItems().removeAll(selected);
         return created;
     }
 
@@ -107,6 +115,16 @@ public class OrderServiceImpl implements OrderService {
     public Order getMyOrder(Long orderId) {
         Order o = orderRepository.findById(orderId).orElseThrow(() -> new IllegalArgumentException("Không có đơn"));
         if (!o.getBuyer().getId().equals(currentUser.id()))
+            throw new org.springframework.security.access.AccessDeniedException("Không phải đơn của bạn");
+        return o;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Order getMyOrderDetail(Long orderId) {
+        Order o = orderRepository.findDetailById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đơn hàng"));
+        if (o.getBuyer() == null || !o.getBuyer().getId().equals(currentUser.id()))
             throw new org.springframework.security.access.AccessDeniedException("Không phải đơn của bạn");
         return o;
     }

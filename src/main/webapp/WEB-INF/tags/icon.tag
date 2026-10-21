@@ -30,6 +30,8 @@
   <c:when test="${name=='check'}"><path d="M20 6 9 17l-5-5"/></c:when>
   <c:when test="${name=='x'}"><path d="M18 6 6 18"/><path d="M6 6l12 12"/></c:when>
   <c:when test="${name=='chevron-right'}"><path d="m9 18 6-6-6-6"/></c:when>
+  <c:when test="${name=='arrow-left'}"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></c:when>
+  <c:when test="${name=='star'}"><path d="M11.5 2.6a.6.6 0 0 1 1 0l2.6 5.3 5.8.8a.6.6 0 0 1 .3 1l-4.2 4.1 1 5.8a.6.6 0 0 1-.9.6L12 17.6l-5.2 2.7a.6.6 0 0 1-.9-.6l1-5.8-4.2-4.1a.6.6 0 0 1 .3-1l5.8-.8Z"/></c:when>
   <c:when test="${name=='heart'}"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></c:when>
   <c:when test="${name=='logout'}"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></c:when>
   <c:when test="${name=='package'}"><path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="M3.3 7 12 12l8.7-5"/><path d="M12 22V12"/></c:when>
