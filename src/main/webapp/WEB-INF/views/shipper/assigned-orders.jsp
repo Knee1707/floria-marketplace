@@ -23,14 +23,15 @@
     </div>
   </div>
 
-  <%-- Bộ lọc theo trạng thái giao vận --%>
-  <div class="d-flex gap-2 flex-wrap" style="margin-bottom:var(--space-4)">
+  <%-- Bộ lọc theo trạng thái giao vận: mọi nút cùng 1 kiểu (đang chọn = brand, còn lại = viền xám);
+       nhãn lấy từ status-badge (plain) để không chép lại bảng nhãn. --%>
+  <div class="d-flex gap-2 flex-wrap" style="margin-bottom:var(--space-4)" role="group" aria-label="Lọc theo trạng thái giao">
     <a class="btn btn-sm ${empty selectedStatus ? 'btn-brand' : 'btn-outline-secondary'}"
-       href="${ctx}/shipper/orders">Tất cả</a>
+       href="${ctx}/shipper/orders" ${empty selectedStatus ? 'aria-current="page"' : ''}>Tất cả</a>
     <c:forEach var="st" items="${statuses}">
       <a class="btn btn-sm ${selectedStatus == st ? 'btn-brand' : 'btn-outline-secondary'}"
-         href="${ctx}/shipper/orders?status=${st}">
-        <t:status-badge value="${st}"/>
+         href="${ctx}/shipper/orders?status=${st}" ${selectedStatus == st ? 'aria-current="page"' : ''}>
+        <t:status-badge value="${st}" plain="true"/>
       </a>
     </c:forEach>
   </div>
