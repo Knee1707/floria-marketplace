@@ -43,6 +43,8 @@
   <c:when test="${name=='percent'}"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></c:when>
   <c:when test="${name=='layers'}"><path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/></c:when>
   <c:when test="${name=='ticket'}"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></c:when>
+  <%-- Thu gọn / mở thanh bên (Lucide panel-left) — dùng chung các shell có sidebar (TV3, F8) --%>
+  <c:when test="${name=='sidebar'}"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></c:when>
   <c:otherwise><circle cx="12" cy="12" r="9"/></c:otherwise>
 </c:choose>
 </svg>
