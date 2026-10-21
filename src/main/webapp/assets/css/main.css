@@ -17,6 +17,10 @@ h1{font-size:var(--text-3xl)} h2{font-size:var(--text-2xl)} h3{font-size:var(--t
 .app-nav .dropdown-menu .dropdown-item{color:var(--color-text)}
 .app-nav .dropdown-menu .dropdown-item:hover,
 .app-nav .dropdown-menu .dropdown-item:focus{background:var(--color-bg);color:var(--color-primary)}
+/* Nút "Đăng nhập" (btn-light) trên nav: .app-nav a ép chữ trắng → trắng trên nền trắng; trả lại chữ tối */
+.app-nav .btn-light,
+.app-nav .btn-light:hover,
+.app-nav .btn-light:focus{color:var(--color-text)}
 .app-sidebar{background:var(--color-surface);border-right:1px solid var(--color-border);min-height:100%}
 .app-sidebar a{display:block;padding:var(--space-2) var(--space-4);color:var(--color-text);border-radius:var(--radius);margin:2px var(--space-2)}
 .app-sidebar a.active,.app-sidebar a:hover{background:var(--color-bg);color:var(--color-primary)}
