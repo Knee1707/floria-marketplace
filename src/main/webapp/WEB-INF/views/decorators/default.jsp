@@ -26,7 +26,8 @@
       <t:icon name="store" size="24"/> Floria
     </a>
     <div class="d-none d-md-flex align-items-center gap-3">
-      <a href="${ctx}/products">Sản phẩm</a>
+      <%-- Shipper không mua hàng → ẩn "Sản phẩm" để header chỉ còn lối vào kênh giao vận --%>
+      <sec:authorize access="!hasRole('SHIPPER')"><a href="${ctx}/products">Sản phẩm</a></sec:authorize>
       <sec:authorize access="hasRole('VENDOR')"><a href="${ctx}/vendor">Kênh bán</a></sec:authorize>
       <sec:authorize access="hasRole('SHIPPER')"><a href="${ctx}/shipper">Giao hàng</a></sec:authorize>
       <sec:authorize access="hasAnyRole('ADMIN','MANAGER')"><a href="${ctx}/admin">Quản trị</a></sec:authorize>
