@@ -26,8 +26,14 @@ public interface VendorStatsService {
     /** Tạo giao dịch rút tiền khỏi ví cửa hàng (F4.6). */
     void withdraw(BigDecimal amount, String note);
 
-    /** Lấy dữ liệu tổng hợp KPI & biểu đồ doanh thu (F4.2, F4.7). */
+    /** Lấy dữ liệu tổng hợp KPI & biểu đồ doanh thu (F4.2, F4.7) — mặc định 7 ngày gần nhất cho biểu đồ, KPI toàn thời gian. */
     RevenueSummary getRevenueSummary();
+
+    /**
+     * Thống kê doanh thu THEO KHOẢNG NGÀY [from, to] (F4.7): KPI (gộp/ròng/số đơn giao) và biểu đồ/bảng
+     * đều tính trong khoảng đã chọn. Dùng cho bộ lọc ngày ở trang báo cáo doanh thu.
+     */
+    RevenueSummary getRevenueSummary(java.time.LocalDate from, java.time.LocalDate to);
 
     /** Lấy danh sách danh mục hoa cho form sản phẩm (F4.3). */
     List<Category> listCategories();

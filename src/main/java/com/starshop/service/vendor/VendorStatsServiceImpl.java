@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -238,50 +239,9 @@ public class VendorStatsServiceImpl implements VendorStatsService {
             walletBalance = BigDecimal.ZERO;
         }
 
-        // Thống kê 7 ngày gần nhất cho biểu đồ Chart.js
+        // Biểu đồ/bảng mặc định: 7 ngày gần nhất (các KPI phía trên là TOÀN THỜI GIAN — dùng cho ví/dashboard).
         LocalDate today = LocalDate.now(VN_ZONE);
-        Map<LocalDate, List<Order>> byDay = new LinkedHashMap<>();
-        for (int i = 6; i >= 0; i--) {
-            byDay.put(today.minusDays(i), new ArrayList<>());
-        }
-        for (Order o : deliveredOrders) {
-            Instant ts = o.getUpdatedAt() != null ? o.getUpdatedAt()
-                    : (o.getCreatedAt() != null ? o.getCreatedAt() : Instant.now());
-            LocalDate d = ts.atZone(VN_ZONE).toLocalDate();
-            if (byDay.containsKey(d)) {
-                byDay.get(d).add(o);
-            }
-        }
-
-        List<DailyRevenuePoint> points = new ArrayList<>();
-        for (Map.Entry<LocalDate, List<Order>> entry : byDay.entrySet()) {
-            String label = entry.getKey().format(DAY_FMT);
-            List<Order> dayOrders = entry.getValue();
-            BigDecimal dayGross = dayOrders.stream()
-                    .map(Order::getTotal)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            BigDecimal dayComm = dayGross.multiply(commRate)
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            BigDecimal dayNet = dayGross.subtract(dayComm);
-
-            points.add(DailyRevenuePoint.builder()
-                    .label(label)
-                    .orderCount(dayOrders.size())
-                    .gross(dayGross)
-                    .commission(dayComm)
-                    .net(dayNet)
-                    .build());
-        }
-
-        String labelsJson = "[" + points.stream()
-                .map(p -> "\"" + p.getLabel() + "\"")
-                .collect(Collectors.joining(",")) + "]";
-        String grossJson = "[" + points.stream()
-                .map(p -> p.getGross().toPlainString())
-                .collect(Collectors.joining(",")) + "]";
-        String netJson = "[" + points.stream()
-                .map(p -> p.getNet().toPlainString())
-                .collect(Collectors.joining(",")) + "]";
+        List<DailyRevenuePoint> points = dailyPoints(deliveredOrders, today.minusDays(6), today, commRate);
 
         return RevenueSummary.builder()
                 .totalProducts(totalProducts)
@@ -294,11 +254,106 @@ public class VendorStatsServiceImpl implements VendorStatsService {
                 .netRevenue(netRevenue)
                 .walletBalance(walletBalance)
                 .totalWithdrawn(totalWithdrawn)
-                .chartLabelsJson(labelsJson)
-                .chartGrossJson(grossJson)
-                .chartNetJson(netJson)
+                .chartLabelsJson(pointsLabelsJson(points))
+                .chartGrossJson(pointsGrossJson(points))
+                .chartNetJson(pointsNetJson(points))
                 .dailyPoints(points)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public RevenueSummary getRevenueSummary(LocalDate from, LocalDate to) {
+        LocalDate today = LocalDate.now(VN_ZONE);
+        if (to == null) to = today;
+        if (from == null) from = to.minusDays(6);
+        if (to.isBefore(from)) { LocalDate tmp = from; from = to; to = tmp; }           // đảo nếu nhập ngược
+        if (ChronoUnit.DAYS.between(from, to) > 366) from = to.minusDays(366);           // chặn khoảng quá dài
+
+        Store myStore = requireMyStore();
+        long totalProducts = queryRepository.countProductsByStoreId(myStore.getId());
+        List<Order> allOrders = queryRepository.findOrdersByStoreId(myStore.getId());
+        List<Transaction> transactions = queryRepository.findTransactionsByStoreId(myStore.getId());
+        BigDecimal commRate = resolveCommissionRate(myStore.getId());
+
+        final LocalDate f = from, t = to;
+        List<Order> deliveredInRange = allOrders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.DELIVERED)
+                .filter(o -> { LocalDate d = effectiveDate(o); return !d.isBefore(f) && !d.isAfter(t); })
+                .toList();
+
+        BigDecimal grossRevenue = deliveredInRange.stream()
+                .map(Order::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal commissionAmount = grossRevenue.multiply(commRate)
+                .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        BigDecimal netRevenue = grossRevenue.subtract(commissionAmount);
+
+        long pendingOrders = allOrders.stream()
+                .filter(o -> o.getStatus() == OrderStatus.NEW || o.getStatus() == OrderStatus.CONFIRMED
+                        || o.getStatus() == OrderStatus.PICKED_UP || o.getStatus() == OrderStatus.SHIPPING)
+                .count();
+        BigDecimal totalWithdrawn = transactions.stream()
+                .filter(x -> x.getType() == TransactionType.WITHDRAW)
+                .map(Transaction::getAmount).reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        List<DailyRevenuePoint> points = dailyPoints(deliveredInRange, from, to, commRate);
+        return RevenueSummary.builder()
+                .totalProducts(totalProducts)
+                .totalOrders(allOrders.size())
+                .pendingOrders(pendingOrders)
+                .deliveredOrders(deliveredInRange.size())
+                .grossRevenue(grossRevenue)
+                .commissionRate(commRate)
+                .commissionAmount(commissionAmount)
+                .netRevenue(netRevenue)
+                .walletBalance(BigDecimal.ZERO)      // số dư ví là toàn thời gian -> không dùng ở báo cáo theo ngày
+                .totalWithdrawn(totalWithdrawn)
+                .chartLabelsJson(pointsLabelsJson(points))
+                .chartGrossJson(pointsGrossJson(points))
+                .chartNetJson(pointsNetJson(points))
+                .dailyPoints(points)
+                .build();
+    }
+
+    /** Ngày hiệu lực của đơn (ưu tiên updatedAt = lúc chuyển DELIVERED). */
+    private LocalDate effectiveDate(Order o) {
+        Instant ts = o.getUpdatedAt() != null ? o.getUpdatedAt()
+                : (o.getCreatedAt() != null ? o.getCreatedAt() : Instant.now());
+        return ts.atZone(VN_ZONE).toLocalDate();
+    }
+
+    /** Gom đơn DELIVERED theo từng ngày trong [from, to] (bao gồm 2 đầu) -> điểm biểu đồ/bảng. */
+    private List<DailyRevenuePoint> dailyPoints(List<Order> delivered, LocalDate from, LocalDate to, BigDecimal commRate) {
+        Map<LocalDate, List<Order>> byDay = new LinkedHashMap<>();
+        for (LocalDate d = from; !d.isAfter(to); d = d.plusDays(1)) byDay.put(d, new ArrayList<>());
+        for (Order o : delivered) {
+            LocalDate d = effectiveDate(o);
+            if (byDay.containsKey(d)) byDay.get(d).add(o);
+        }
+        List<DailyRevenuePoint> points = new ArrayList<>();
+        for (Map.Entry<LocalDate, List<Order>> e : byDay.entrySet()) {
+            List<Order> dayOrders = e.getValue();
+            BigDecimal dayGross = dayOrders.stream().map(Order::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
+            BigDecimal dayComm = dayGross.multiply(commRate).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            points.add(DailyRevenuePoint.builder()
+                    .label(e.getKey().format(DAY_FMT))
+                    .orderCount(dayOrders.size())
+                    .gross(dayGross)
+                    .commission(dayComm)
+                    .net(dayGross.subtract(dayComm))
+                    .build());
+        }
+        return points;
+    }
+
+    private String pointsLabelsJson(List<DailyRevenuePoint> p) {
+        return "[" + p.stream().map(x -> "\"" + x.getLabel() + "\"").collect(Collectors.joining(",")) + "]";
+    }
+    private String pointsGrossJson(List<DailyRevenuePoint> p) {
+        return "[" + p.stream().map(x -> x.getGross().toPlainString()).collect(Collectors.joining(",")) + "]";
+    }
+    private String pointsNetJson(List<DailyRevenuePoint> p) {
+        return "[" + p.stream().map(x -> x.getNet().toPlainString()).collect(Collectors.joining(",")) + "]";
     }
 
     private BigDecimal resolveCommissionRate(Long storeId) {
