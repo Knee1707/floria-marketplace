@@ -1,5 +1,6 @@
 package com.starshop.controller.customer;
 
+import com.starshop.domain.Product;
 import com.starshop.domain.enums.CommonEnums.ProductStatus;
 import com.starshop.repository.ProductRepository;
 import com.starshop.service.customer.ReviewService;
@@ -11,6 +12,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
 
 /**
  * Danh sách + tìm kiếm + lọc + chi tiết sản phẩm (F3.2–F3.7, F3.16, F3.17). @owner: L.
@@ -29,17 +32,52 @@ public class ProductController {
 
     @GetMapping
     public String list(@RequestParam(defaultValue = "") String keyword,
-                       @RequestParam(required = false) Long categoryId,
+                       @RequestParam(required = false) String categoryId,
+                       @RequestParam(defaultValue = "banchay") String sort,
+                       @RequestParam(required = false) String minPrice,
+                       @RequestParam(required = false) String maxPrice,
                        @RequestParam(defaultValue = "0") int page,
                        Model model) {
-        Pageable pageable = PageRequest.of(Math.max(page, 0), PAGE_SIZE, Sort.by("soldCount").descending());
-        Page<?> products = (categoryId != null)
-                ? productRepository.findByStatusAndCategoryId(ProductStatus.ACTIVE, categoryId, pageable)
-                : productRepository.findByStatusAndNameContainingIgnoreCase(ProductStatus.ACTIVE, keyword, pageable);
+        // 4 tiêu chí sắp xếp theo đề: mới / bán chạy / đánh giá / yêu thích (giảm dần).
+        Sort order = switch (sort) {
+            case "moi"      -> Sort.by("createdAt").descending();
+            case "danhgia"  -> Sort.by("ratingAvg").descending();
+            case "yeuthich" -> Sort.by("favoriteCount").descending();
+            default         -> Sort.by("soldCount").descending();   // banchay (mặc định)
+        };
+        Pageable pageable = PageRequest.of(Math.max(page, 0), PAGE_SIZE, order);
+
+        Page<Product> products = productRepository.search(
+                ProductStatus.ACTIVE, parseId(categoryId),
+                keyword == null ? "" : keyword.trim(),
+                parsePrice(minPrice), parsePrice(maxPrice), pageable);
+
         model.addAttribute("products", products);
         model.addAttribute("keyword", keyword);
+        model.addAttribute("sort", sort);
+        model.addAttribute("categoryId", categoryId);
+        model.addAttribute("minPrice", minPrice);
+        model.addAttribute("maxPrice", maxPrice);
         model.addAttribute("pageTitle", "Sản phẩm");
         return "customer/product-list";
+    }
+
+    /** Parse an toàn khoảng giá từ query (rỗng/sai -> null = không lọc). */
+    private BigDecimal parsePrice(String s) {
+        try {
+            return (s == null || s.isBlank()) ? null : new BigDecimal(s.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /** Parse an toàn id danh mục từ query (rỗng/sai -> null = mọi danh mục). */
+    private Long parseId(String s) {
+        try {
+            return (s == null || s.isBlank()) ? null : Long.valueOf(s.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     @GetMapping("/{id}")

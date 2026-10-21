@@ -6,7 +6,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,4 +37,25 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     /** SP của 1 shop (Vendor). @owner dùng. */
     Page<Product> findByStoreId(Long storeId, Pageable pageable);
+
+    /**
+     * Tìm kiếm + lọc SP cho trang /products (F3.2–F3.7): theo từ khoá, danh mục, khoảng giá.
+     * Cách SẮP XẾP (mới / bán chạy / đánh giá / yêu thích) truyền qua Sort của Pageable
+     * (sort theo cột createdAt / soldCount / ratingAvg / favoriteCount).
+     */
+    @EntityGraph(attributePaths = {"store", "category"})
+    @Query("""
+            select p from Product p
+            where p.status = :status
+              and (:categoryId is null or p.category.id = :categoryId)
+              and (:keyword = '' or lower(p.name) like lower(concat('%', :keyword, '%')))
+              and (:minPrice is null or p.price >= :minPrice)
+              and (:maxPrice is null or p.price <= :maxPrice)
+            """)
+    Page<Product> search(@Param("status") ProductStatus status,
+                         @Param("categoryId") Long categoryId,
+                         @Param("keyword") String keyword,
+                         @Param("minPrice") BigDecimal minPrice,
+                         @Param("maxPrice") BigDecimal maxPrice,
+                         Pageable pageable);
 }
