@@ -3,8 +3,11 @@
 <%--
   status-badge.tag — SSOT trạng thái (rules/frontend/05). Truyền enum thô, KHÔNG tự đặt màu.
   Dùng: <t:status-badge value="${order.status}"/>
+  plain="true": chỉ in NHÃN chữ (không viên màu) — vd nút lọc trạng thái, để cả hàng nút dùng 1 kiểu thống nhất
+  mà nhãn vẫn lấy từ đây (không chép lại bảng nhãn ở JSP).
 --%>
 <%@ attribute name="value" required="true" %>
+<%@ attribute name="plain" type="java.lang.Boolean" %>
 <c:choose>
   <c:when test="${value=='NEW'}"><c:set var="cls" value="info"/><c:set var="lbl" value="Đơn mới"/></c:when>
   <c:when test="${value=='CONFIRMED'}"><c:set var="cls" value="primary"/><c:set var="lbl" value="Đã xác nhận"/></c:when>
@@ -23,6 +26,12 @@
   <c:when test="${value=='DISABLED'}"><c:set var="cls" value="neutral"/><c:set var="lbl" value="Đã tắt"/></c:when>
   <c:when test="${value=='LOCKED'}"><c:set var="cls" value="danger"/><c:set var="lbl" value="Bị khoá"/></c:when>
   <c:when test="${value=='UNVERIFIED'}"><c:set var="cls" value="warning"/><c:set var="lbl" value="Chưa kích hoạt"/></c:when>
+  <%-- Trạng thái giao vận (DeliveryStatus — Shipper): DELIVERING/DELIVERED dùng chung nhánh ở trên --%>
+  <c:when test="${value=='ASSIGNED'}"><c:set var="cls" value="info"/><c:set var="lbl" value="Chờ nhận giao"/></c:when>
+  <c:when test="${value=='FAILED'}"><c:set var="cls" value="danger"/><c:set var="lbl" value="Giao thất bại"/></c:when>
   <c:otherwise><c:set var="cls" value="neutral"/><c:set var="lbl" value="${value}"/></c:otherwise>
 </c:choose>
-<span class="ss-badge ${cls}">${lbl}</span>
+<c:choose>
+  <c:when test="${plain}">${lbl}</c:when>
+  <c:otherwise><span class="ss-badge ${cls}">${lbl}</span></c:otherwise>
+</c:choose>
