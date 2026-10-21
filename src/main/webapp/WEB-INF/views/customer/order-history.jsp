@@ -32,11 +32,14 @@
       <thead><tr><th>Mã đơn</th><th>Cửa hàng</th><th>Trạng thái</th><th class="num">Tổng</th><th></th></tr></thead>
       <tbody>
         <c:forEach var="o" items="${orders.content}">
-          <tr><td>${o.code}</td><td>${o.store.name}</td><td><t:status-badge value="${o.status}"/></td>
+          <tr><td><a href="${ctx}/account/orders/${o.id}">${o.code}</a></td><td>${o.store.name}</td><td><t:status-badge value="${o.status}"/></td>
             <td class="num"><fmt:formatNumber value="${o.total}" type="number"/> đ</td>
-            <td>
+            <td class="actions">
+              <a class="btn btn-sm btn-outline-secondary" href="${ctx}/account/orders/${o.id}">
+                <c:choose><c:when test="${o.status == 'DELIVERED'}">Xem & đánh giá</c:when><c:otherwise>Chi tiết</c:otherwise></c:choose>
+              </a>
               <c:if test="${o.status == 'NEW'}">
-                <form method="post" action="${ctx}/account/orders/${o.id}/cancel" class="m-0"
+                <form method="post" action="${ctx}/account/orders/${o.id}/cancel" class="d-inline m-0"
                       onsubmit="return confirm('Huỷ đơn ${o.code}?');">
                   <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
                   <button type="submit" class="btn btn-sm btn-outline-secondary">Huỷ đơn</button>

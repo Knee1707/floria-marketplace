@@ -10,6 +10,8 @@
 
 <form method="post" action="${ctx}/checkout" class="row g-4">
   <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
+  <%-- Giữ đúng các sản phẩm đã chọn từ giỏ sang bước đặt hàng --%>
+  <c:forEach var="id" items="${itemIds}"><input type="hidden" name="itemIds" value="${id}"/></c:forEach>
   <div class="col-md-7">
     <t:card title="Địa chỉ nhận hàng">
       <c:choose>
@@ -32,8 +34,12 @@
   </div>
   <div class="col-md-5">
     <t:card title="Tóm tắt đơn">
+      <c:url var="voucherUrl" value="/checkout">
+        <c:param name="voucher" value="${voucher}"/>
+        <c:forEach var="id" items="${itemIds}"><c:param name="itemIds" value="${id}"/></c:forEach>
+      </c:url>
       <div class="d-flex mb-2"><input class="form-control" name="voucher" value="${voucher}" placeholder="Mã giảm giá">
-        <a class="btn btn-outline-secondary ms-2" href="${ctx}/checkout?voucher=${voucher}">Áp</a></div>
+        <a class="btn btn-outline-secondary ms-2" href="${voucherUrl}">Áp</a></div>
       <div class="d-flex justify-content-between"><span>Tạm tính</span><span><fmt:formatNumber value="${subtotal}" type="number"/> đ</span></div>
       <div class="d-flex justify-content-between"><span>Phí ship (mỗi shop)</span><span>30.000 đ</span></div>
       <div class="d-flex justify-content-between"><span>Giảm giá</span><span>- <fmt:formatNumber value="${discount}" type="number"/> đ</span></div>

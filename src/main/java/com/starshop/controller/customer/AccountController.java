@@ -1,9 +1,11 @@
 package com.starshop.controller.customer;
 
 import com.starshop.domain.UserAddress;
+import com.starshop.domain.enums.CommonEnums.ReviewTarget;
 import com.starshop.domain.enums.OrderStatus;
 import com.starshop.repository.UserAddressRepository;
 import com.starshop.security.CurrentUser;
+import com.starshop.service.customer.OrderReviewService;
 import com.starshop.service.customer.OrderService;
 import com.starshop.service.customer.ViewHistoryService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class AccountController {
 
     private final OrderService orderService;
+    private final OrderReviewService orderReviewService;
     private final ViewHistoryService viewHistoryService;
     private final UserAddressRepository addressRepository;
     private final CurrentUser currentUser;
@@ -39,6 +42,29 @@ public class AccountController {
         model.addAttribute("status", status);
         model.addAttribute("statuses", OrderStatus.values());
         return "customer/order-history";
+    }
+
+    @GetMapping("/orders/{id}")
+    public String orderDetail(@PathVariable Long id, Model model) {
+        model.addAttribute("order", orderService.getMyOrderDetail(id));
+        model.addAttribute("reviews", orderReviewService.myReviewsFor(id));
+        return "customer/order-detail";
+    }
+
+    /** Đánh giá cửa hàng / shipper của đơn đã giao (F3.18). */
+    @PostMapping("/orders/{id}/review")
+    public String submitReview(@PathVariable Long id,
+                               @RequestParam ReviewTarget target,
+                               @RequestParam int rating,
+                               @RequestParam(required = false) String comment,
+                               RedirectAttributes ra) {
+        try {
+            orderReviewService.submit(id, target, rating, comment);
+            ra.addFlashAttribute("toast", "Đã gửi đánh giá. Cảm ơn bạn!");
+        } catch (RuntimeException ex) {
+            ra.addFlashAttribute("toastError", ex.getMessage());
+        }
+        return "redirect:/account/orders/" + id;
     }
 
     @PostMapping("/orders/{id}/cancel")

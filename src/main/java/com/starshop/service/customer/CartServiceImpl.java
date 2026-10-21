@@ -47,8 +47,9 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public void updateQuantity(Long cartItemId, int quantity) {
-        CartItem item = getOwnedItem(cartItemId);
-        if (quantity < 1) { cartItemRepository.delete(item); return; }
+        Cart cart = getMyCart();
+        CartItem item = ownedItem(cart, cartItemId);
+        if (quantity < 1) { removeFromCart(cart, item); return; }
         item.setQuantity(quantity);
         cartItemRepository.save(item);
     }
@@ -56,19 +57,30 @@ public class CartServiceImpl implements CartService {
     @Override
     @Transactional
     public void remove(Long cartItemId) {
-        cartItemRepository.delete(getOwnedItem(cartItemId));
+        Cart cart = getMyCart();
+        removeFromCart(cart, ownedItem(cart, cartItemId));
     }
 
     @Override
     @Transactional
     public void clear() {
         Cart cart = getMyCart();
-        cartItemRepository.deleteAll(cart.getItems());
+        cart.getItems().clear();   // orphanRemoval=true -> xoá hết dòng trong giỏ
+        cartRepository.save(cart);
+    }
+
+    /**
+     * Xoá item BẰNG CÁCH gỡ khỏi collection của Cart (không gọi thẳng repository.delete).
+     * Vì Cart.items có cascade=ALL + orphanRemoval=true: nếu chỉ delete item mà vẫn để nó
+     * trong collection, khi flush Hibernate cascade persist lại -> xoá bị "hoàn tác".
+     */
+    private void removeFromCart(Cart cart, CartItem item) {
+        cart.getItems().remove(item);
+        cartRepository.save(cart);
     }
 
     /** Chống IDOR: item phải thuộc giỏ của user hiện tại. */
-    private CartItem getOwnedItem(Long cartItemId) {
-        Cart cart = getMyCart();
+    private CartItem ownedItem(Cart cart, Long cartItemId) {
         return cart.getItems().stream().filter(i -> i.getId().equals(cartItemId)).findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy mục trong giỏ của bạn"));
     }
