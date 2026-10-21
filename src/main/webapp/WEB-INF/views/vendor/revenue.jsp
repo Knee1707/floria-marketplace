@@ -11,6 +11,22 @@
   <t:page-header title="Báo cáo & Biểu đồ Doanh thu"
                  subtitle="Công thức chuẩn: Doanh thu ròng = Tổng đơn DELIVERED − Hoa hồng sàn (${summary.commissionRate}%)"/>
 
+  <%-- Bộ lọc thời gian: preset nhanh hoặc chọn khoảng ngày tuỳ ý --%>
+  <div class="ss-toolbar" style="margin-bottom:var(--space-5)">
+    <div class="seg">
+      <a href="${ctx}/vendor/revenue?days=7"  class="${days==7?'active':''}">7 ngày</a>
+      <a href="${ctx}/vendor/revenue?days=30" class="${days==30?'active':''}">30 ngày</a>
+      <a href="${ctx}/vendor/revenue?days=90" class="${days==90?'active':''}">90 ngày</a>
+    </div>
+    <form method="get" action="${ctx}/vendor/revenue" class="d-flex align-items-center gap-2 ms-auto flex-wrap">
+      <label class="muted mb-0" for="fromDate">Từ</label>
+      <input type="date" id="fromDate" name="from" class="form-control form-control-sm" style="max-width:160px" value="${fromDate}">
+      <label class="muted mb-0" for="toDate">đến</label>
+      <input type="date" id="toDate" name="to" class="form-control form-control-sm" style="max-width:160px" value="${toDate}">
+      <button class="btn btn-sm btn-brand" type="submit"><t:icon name="chart" size="16"/> Xem</button>
+    </form>
+  </div>
+
   <div class="row g-3" style="margin-bottom:var(--space-6)">
     <div class="col-sm-6 col-xl-3">
       <t:stat-tile label="Đơn giao thành công" value="${summary.deliveredOrders}" icon="check"/>
@@ -32,7 +48,7 @@
   <div class="row g-4">
     <%-- Biểu đồ Chart.js (F4.7) --%>
     <div class="col-lg-7">
-      <t:card title="Biểu đồ doanh thu 7 ngày gần nhất">
+      <t:card title="Biểu đồ doanh thu (${fromDate} → ${toDate})">
         <div style="height:320px;position:relative">
           <canvas id="vendorRevenueChart"></canvas>
         </div>

@@ -13,6 +13,10 @@ h1{font-size:var(--text-3xl)} h2{font-size:var(--text-2xl)} h3{font-size:var(--t
 /* Layout shells */
 .app-nav{background:var(--color-primary);color:var(--white)}
 .app-nav a{color:var(--white)}
+/* Nút sáng (Đăng nhập) trên nav là thẻ <a>: ép chữ TỐI để không chìm trên nền trắng của nút */
+.app-nav a.btn-light,
+.app-nav a.btn-light:hover,
+.app-nav a.btn-light:focus{color:var(--color-text)}
 /* Menu Tài khoản (dropdown trên nav): chữ TỐI trên nền trắng để đọc được */
 .app-nav .dropdown-menu .dropdown-item{color:var(--color-text)}
 .app-nav .dropdown-menu .dropdown-item:hover,
@@ -68,6 +72,18 @@ h1{font-size:var(--text-3xl)} h2{font-size:var(--text-2xl)} h3{font-size:var(--t
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:var(--space-4)}
 .prod-thumb{width:100%;aspect-ratio:1;object-fit:cover;border-radius:var(--radius);background:var(--gray-100)}
 .price{color:var(--color-primary);font-weight:var(--fw-bold)}
+
+/* Chấm sao đánh giá (radio thuần CSS, không JS) — trang chi tiết đơn.
+   Các sao xếp ngược (5→1) rồi flex row-reverse để hiển thị 1→5; dùng ~ để tô từ sao chọn xuống. */
+.star-rate{display:inline-flex;flex-direction:row-reverse;justify-content:flex-end;font-size:28px;line-height:1}
+.star-rate input{position:absolute;width:1px;height:1px;opacity:0}
+.star-rate label{color:var(--gray-300);cursor:pointer;padding:0 2px}
+.star-rate input:checked ~ label{color:var(--warning)}
+.star-rate:hover label{color:var(--gray-300)}
+.star-rate label:hover,.star-rate label:hover ~ label{color:var(--warning)}
+.star-rate input:focus-visible + label{outline:2px solid var(--focus-ring);outline-offset:2px;border-radius:var(--radius)}
+.stars-static{color:var(--warning);font-size:18px;letter-spacing:1px}
+.stars-static .off{color:var(--gray-300)}
 
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 

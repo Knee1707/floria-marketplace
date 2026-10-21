@@ -30,11 +30,11 @@
       <sec:authorize access="!hasRole('SHIPPER')"><a href="${ctx}/products">Sản phẩm</a></sec:authorize>
       <sec:authorize access="hasRole('VENDOR')"><a href="${ctx}/vendor">Kênh bán</a></sec:authorize>
       <sec:authorize access="hasRole('SHIPPER')"><a href="${ctx}/shipper">Giao hàng</a></sec:authorize>
-      <sec:authorize access="hasAnyRole('ADMIN','MANAGER')"><a href="${ctx}/admin">Quản trị</a></sec:authorize>
+      <sec:authorize access="hasRole('ADMIN')"><a href="${ctx}/admin">Quản trị</a></sec:authorize>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <%-- Giỏ hàng (truy cập nhanh) chỉ cho người MUA --%>
-      <sec:authorize access="hasAnyRole('USER','VENDOR')">
+      <%-- Giỏ hàng (truy cập nhanh) chỉ cho người MUA (USER). Vendor là người bán, không mua hàng. --%>
+      <sec:authorize access="hasRole('USER')">
         <a href="${ctx}/cart" title="Giỏ hàng"><t:icon name="cart" size="22" label="Giỏ hàng"/></a>
       </sec:authorize>
       <%-- Menu tài khoản: có Lịch sử mua hàng, Yêu thích, Đã xem, Địa chỉ, Hồ sơ, Đăng xuất --%>
@@ -45,14 +45,23 @@
             <t:icon name="user" size="18"/> Tài khoản
           </button>
           <ul class="dropdown-menu dropdown-menu-end">
-            <sec:authorize access="hasAnyRole('USER','VENDOR')">
+            <%-- Chức năng MUA HÀNG: chỉ USER (Vendor bán hàng, không có giỏ/mua sắm) --%>
+            <sec:authorize access="hasRole('USER')">
               <li><a class="dropdown-item" href="${ctx}/account/orders"><t:icon name="package" size="16"/> Lịch sử mua hàng</a></li>
               <li><a class="dropdown-item" href="${ctx}/cart"><t:icon name="cart" size="16"/> Giỏ hàng</a></li>
               <li><a class="dropdown-item" href="${ctx}/wishlist"><t:icon name="heart" size="16"/> Sản phẩm yêu thích</a></li>
               <li><a class="dropdown-item" href="${ctx}/account/viewed"><t:icon name="eye" size="16"/> Sản phẩm đã xem</a></li>
               <li><a class="dropdown-item" href="${ctx}/account/addresses"><t:icon name="home" size="16"/> Địa chỉ nhận hàng</a></li>
-              <li><a class="dropdown-item" href="${ctx}/account/profile"><t:icon name="user" size="16"/> Hồ sơ của tôi</a></li>
               <li><hr class="dropdown-divider"></li>
+            </sec:authorize>
+            <%-- Lối tắt kênh bán cho Vendor --%>
+            <sec:authorize access="hasRole('VENDOR')">
+              <li><a class="dropdown-item" href="${ctx}/vendor"><t:icon name="store" size="16"/> Kênh bán của tôi</a></li>
+              <li><hr class="dropdown-divider"></li>
+            </sec:authorize>
+            <%-- Hồ sơ: cho người có khu tài khoản (USER, VENDOR) --%>
+            <sec:authorize access="hasAnyRole('USER','VENDOR')">
+              <li><a class="dropdown-item" href="${ctx}/account/profile"><t:icon name="user" size="16"/> Hồ sơ của tôi</a></li>
             </sec:authorize>
             <li>
               <form method="post" action="${ctx}/auth/logout" class="m-0">

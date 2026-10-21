@@ -79,15 +79,28 @@ public class VendorController {
         return "redirect:/vendor/wallet";
     }
 
-    // @owner: TV2 | @leaf: F4.7 Thống kê doanh thu (Chart.js) | @status: DONE
+    // @owner: TV2 | @leaf: F4.7 Thống kê doanh thu (Chart.js) + lọc theo khoảng ngày | @status: DONE
     @GetMapping("/revenue")
-    public String revenue(Model model) {
+    public String revenue(@RequestParam(required = false) Integer days,
+                          @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate from,
+                          @RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate to,
+                          Model model) {
         Store store = storeService.myStore();
         if (store == null) {
             return "redirect:/vendor/register";
         }
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+        // Ưu tiên khoảng from–to; nếu không có thì dùng preset số ngày (mặc định 7).
+        if (from == null && to == null) {
+            int n = (days == null || days < 1) ? 7 : Math.min(days, 366);
+            to = today;
+            from = today.minusDays(n - 1L);
+            model.addAttribute("days", n);
+        }
         model.addAttribute("store", store);
-        model.addAttribute("summary", vendorStatsService.getRevenueSummary());
+        model.addAttribute("summary", vendorStatsService.getRevenueSummary(from, to));
+        model.addAttribute("fromDate", from);
+        model.addAttribute("toDate", to);
         return "vendor/revenue";
     }
 

@@ -51,7 +51,10 @@ public class SecurityConfig {
                 .requestMatchers("/manager/**").hasAnyRole("ADMIN", "MANAGER")
                 .requestMatchers("/vendor/**").hasRole("VENDOR")
                 .requestMatchers("/shipper/**").hasRole("SHIPPER")
-                .requestMatchers("/cart/**", "/checkout/**", "/account/**", "/orders/**").hasAnyRole("USER", "VENDOR")
+                // Mua hàng (giỏ/thanh toán): chỉ USER — Vendor là người bán, không mua
+                .requestMatchers("/cart/**", "/checkout/**", "/orders/**", "/wishlist/**").hasRole("USER")
+                // Khu tài khoản (hồ sơ...) cho cả USER và VENDOR
+                .requestMatchers("/account/**").hasAnyRole("USER", "VENDOR")
                 // REST API: đăng nhập mở, còn lại cần JWT
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/**").authenticated()
