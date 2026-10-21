@@ -33,8 +33,8 @@
       <sec:authorize access="hasRole('ADMIN')"><a href="${ctx}/admin">Quản trị</a></sec:authorize>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <%-- Giỏ hàng (truy cập nhanh) chỉ cho người MUA (USER). Vendor là người bán, không mua hàng. --%>
-      <sec:authorize access="hasRole('USER')">
+      <%-- Giỏ hàng (truy cập nhanh) cho người MUA: USER và cả VENDOR (Vendor có quyền của User - yêu cầu GV). --%>
+      <sec:authorize access="hasAnyRole('USER','VENDOR')">
         <a href="${ctx}/cart" title="Giỏ hàng"><t:icon name="cart" size="22" label="Giỏ hàng"/></a>
       </sec:authorize>
       <%-- Menu tài khoản: có Lịch sử mua hàng, Yêu thích, Đã xem, Địa chỉ, Hồ sơ, Đăng xuất --%>
@@ -45,8 +45,8 @@
             <t:icon name="user" size="18"/> Tài khoản
           </button>
           <ul class="dropdown-menu dropdown-menu-end">
-            <%-- Chức năng MUA HÀNG: chỉ USER (Vendor bán hàng, không có giỏ/mua sắm) --%>
-            <sec:authorize access="hasRole('USER')">
+            <%-- Chức năng MUA HÀNG: USER và VENDOR (Vendor có quyền của User - yêu cầu GV) --%>
+            <sec:authorize access="hasAnyRole('USER','VENDOR')">
               <li><a class="dropdown-item" href="${ctx}/account/orders"><t:icon name="package" size="16"/> Lịch sử mua hàng</a></li>
               <li><a class="dropdown-item" href="${ctx}/cart"><t:icon name="cart" size="16"/> Giỏ hàng</a></li>
               <li><a class="dropdown-item" href="${ctx}/wishlist"><t:icon name="heart" size="16"/> Sản phẩm yêu thích</a></li>

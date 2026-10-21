@@ -33,6 +33,11 @@ public class Product extends BaseEntity {
     @Column(nullable = false, precision = 3, scale = 2)
     private BigDecimal ratingAvg;
 
+    /** Đếm lượt yêu thích (wishlist) để sắp xếp "yêu thích nhiều nhất". */
+    @Builder.Default
+    @Column(nullable = false)
+    private Long favoriteCount = 0L;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ProductStatus status;
