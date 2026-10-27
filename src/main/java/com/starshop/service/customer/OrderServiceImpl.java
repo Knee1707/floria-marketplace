@@ -163,10 +163,22 @@ public class OrderServiceImpl implements OrderService {
     private String resolveAddress(Long addressId) {
         if (addressId != null) {
             UserAddress a = addressRepository.findById(addressId).orElse(null);
-            if (a != null && a.getUser().getId().equals(currentUser.id()))
-                return a.getReceiverName() + " | " + a.getPhone() + " | " + a.getAddressLine()
-                        + ", " + a.getWard() + ", " + a.getDistrict() + ", " + a.getProvince();
+            if (a != null && a.getUser().getId().equals(currentUser.id())) {
+                StringBuilder loc = new StringBuilder();
+                appendPart(loc, a.getAddressLine());
+                appendPart(loc, a.getWard());
+                appendPart(loc, a.getProvince());
+                return a.getReceiverName() + " | " + a.getPhone() + " | " + loc;
+            }
         }
         return currentUser.get().getFullName();
+    }
+
+    /** Nối các phần địa chỉ không rỗng bằng dấu phẩy (bỏ qua phần null/trống). */
+    private void appendPart(StringBuilder sb, String part) {
+        if (part != null && !part.isBlank()) {
+            if (sb.length() > 0) sb.append(", ");
+            sb.append(part.trim());
+        }
     }
 }
