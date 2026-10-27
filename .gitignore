@@ -14,3 +14,17 @@ target/
 # Bí mật môi trường - KHÔNG commit
 .env
 application-local.yml
+
+# Tài liệu & ảnh xuất (không commit binary nặng vào repo mã nguồn)
+*.docx
+*.doc
+*.pptx
+*.xlsx
+*.pdf
+*.svg
+# File khóa tạm của Microsoft Office
+~$*
+
+# OS
+.DS_Store
+Thumbs.db
