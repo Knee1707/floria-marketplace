@@ -15,8 +15,8 @@
         <c:otherwise>
           <c:forEach var="a" items="${addresses}">
             <div class="d-flex justify-content-between align-items-start" style="padding:var(--space-2) 0;border-bottom:1px solid var(--color-border)">
-              <div><b>${a.receiverName}</b> · ${a.phone} <c:if test="${a.isDefault}"><span class="ss-badge primary">Mặc định</span></c:if>
-                <div class="muted" style="font-size:var(--text-sm)">${a.addressLine}, ${a.ward}, ${a.district}, ${a.province}</div></div>
+              <div><b>${a.receiverName}</b> · ${a.phone} <c:if test="${a['default']}"><span class="ss-badge primary">Mặc định</span></c:if>
+                <div class="muted" style="font-size:var(--text-sm)">${a.addressLine}, ${a.ward}, ${a.province}</div></div>
               <form method="post" action="${ctx}/account/addresses/delete">
                 <input type="hidden" name="${_csrf.parameterName}" value="${_csrf.token}"/>
                 <input type="hidden" name="id" value="${a.id}"/>
@@ -35,8 +35,7 @@
         <t:form-field name="receiverName" label="Người nhận" required="true"/>
         <t:form-field name="phone" label="Số điện thoại" required="true"/>
         <t:form-field name="addressLine" label="Địa chỉ" required="true"/>
-        <div class="row"><div class="col"><t:form-field name="ward" label="Phường/Xã"/></div>
-          <div class="col"><t:form-field name="district" label="Quận/Huyện"/></div></div>
+        <t:form-field name="ward" label="Phường/Xã"/>
         <t:form-field name="province" label="Tỉnh/Thành"/>
         <button class="btn btn-brand btn-min w-100">Lưu địa chỉ</button>
       </form>

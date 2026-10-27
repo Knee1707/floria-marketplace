@@ -20,7 +20,7 @@
         </c:when>
         <c:otherwise>
           <c:forEach var="a" items="${addresses}">
-            <label class="d-block mb-2"><input type="radio" name="addressId" value="${a.id}" ${a.isDefault?'checked':''}>
+            <label class="d-block mb-2"><input type="radio" name="addressId" value="${a.id}" ${a['default']?'checked':''}>
               ${a.receiverName} · ${a.phone} · ${a.addressLine}, ${a.ward}, ${a.district}, ${a.province}</label>
           </c:forEach>
         </c:otherwise>
