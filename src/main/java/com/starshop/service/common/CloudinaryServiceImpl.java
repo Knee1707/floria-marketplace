@@ -43,8 +43,9 @@ public class CloudinaryServiceImpl implements CloudinaryService {
             return null;
         }
 
-        // Chế độ demo khi máy local chưa cấu hình tài khoản Cloudinary thật
-        if ("demo".equalsIgnoreCase(cloudName) || "000000000000".equals(apiKey)) {
+        // Chế độ demo khi máy local chưa cấu hình tài khoản Cloudinary thật.
+        // Nhận diện cả giá trị mặc định (demo/your-cloud-name) lẫn rỗng để KHÔNG gọi upload với khóa giả.
+        if (isUnconfigured(cloudName) || isUnconfigured(apiKey)) {
             String fallback = pickFallbackUrl(file.getOriginalFilename());
             log.info("[F7.3 Cloudinary Demo Mode] Chưa cấu hình CLOUDINARY_*, dùng URL mẫu cho '{}': {}",
                     file.getOriginalFilename(), fallback);
@@ -70,6 +71,13 @@ public class CloudinaryServiceImpl implements CloudinaryService {
                     ex.getMessage(), file.getOriginalFilename());
             return pickFallbackUrl(file.getOriginalFilename());
         }
+    }
+
+    /** Coi là chưa cấu hình nếu rỗng hoặc còn là giá trị mẫu (demo / your-... / 000000000000). */
+    private boolean isUnconfigured(String v) {
+        if (v == null || v.isBlank()) return true;
+        String s = v.trim().toLowerCase();
+        return s.equals("demo") || s.equals("000000000000") || s.startsWith("your-");
     }
 
     private String pickFallbackUrl(String filename) {
